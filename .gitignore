@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.env
+*.db
+
+# Vector store (generated at runtime)
+vector_store.json
+
+# Node
+node_modules/
+dist/
+.cache/
+
+# IDE
+.vscode/
+*.swp
+*.swo
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Pyright (local config)
+pyrightconfig.json

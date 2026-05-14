@@ -1,0 +1,17 @@
+[project]
+name = "smart-document-agent"
+version = "1.0.0"
+description = "A Smart Document Agent backend using FastAPI and Gemini"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pyright]
+venvPath = "."
+venv = "venv"
+pythonVersion = "3.14"
