@@ -97,16 +97,16 @@ npm run dev
 3. Click the **Upload Document** zone and select a PDF, TXT, or CSV
 4. Once processed, type a question in the chat input — the AI will answer based on your document!
 
-## API Documentation
+## Documentation
 
-Once the backend is running, visit **http://127.0.0.1:8000/docs** for the interactive Swagger UI with all available endpoints.
+For an in-depth look at how the Smart Document Agent works, please refer to our comprehensive documentation suite:
 
-| Method | Endpoint                        | Description              |
-| ------ | ------------------------------- | ------------------------ |
-| GET    | `/api/v1/sessions`              | List all chat sessions   |
-| POST   | `/api/v1/sessions`              | Create a new session     |
-| POST   | `/api/v1/sessions/{id}/upload`  | Upload a document        |
-| POST   | `/api/v1/sessions/{id}/chat`    | Ask a question           |
+- 🏗️ **[Architecture & Design](docs/ARCHITECTURE.md):** Tech stack, database schema, and how the Targeted Semantic Retrieval (RAG) pipeline is built.
+- 📖 **[API Reference](docs/API_REFERENCE.md):** Detailed endpoints, request/response schemas for the FastAPI backend.
+- 💡 **[User Guide](docs/USER_GUIDE.md):** How to use the frontend features, including Data Extraction and Document Comparison.
+- 🚀 **[Feature Highlights](FEATURE_HIGHLIGHTS.md):** A pitch guide detailing the primary benefits and advanced AI integrations.
+
+Alternatively, once the backend is running, you can visit **http://127.0.0.1:8000/docs** for the interactive Swagger UI.
 
 ## License
 
