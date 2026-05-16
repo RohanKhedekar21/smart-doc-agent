@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { FileText, PanelRightOpen } from 'lucide-react'
+import { FileText, PanelRightOpen, Table } from 'lucide-react'
 import Sidebar from './components/Sidebar'
 import ChatArea from './components/ChatArea'
 import UploadZone from './components/UploadZone'
 import DocumentPanel from './components/DocumentPanel'
 import SettingsModal from './components/SettingsModal'
+import ExtractModal from './components/ExtractModal'
 import { 
   getSessions, createSession, renameSession, deleteSession,
   uploadFile, chatWithSession, getDocuments, deleteDocument, getMessages
@@ -19,6 +20,7 @@ function App() {
   const [isThinking, setIsThinking] = useState(false);
   const [showDocPanel, setShowDocPanel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showExtract, setShowExtract] = useState(false);
 
   useEffect(() => {
     fetchSessions();
@@ -184,6 +186,13 @@ function App() {
           <div className="flex items-center gap-3">
             <UploadZone onUpload={handleUpload} isUploading={isUploading} />
             <button 
+              onClick={() => setShowExtract(true)}
+              className="p-2.5 rounded-xl border transition-all duration-200 bg-white/5 border-panel-border text-gray-400 hover:text-white hover:border-white/20"
+              title="Extract structured data"
+            >
+              <Table size={18} />
+            </button>
+            <button 
               onClick={() => setShowDocPanel(!showDocPanel)}
               className={`p-2.5 rounded-xl border transition-all duration-200 ${
                 showDocPanel 
@@ -212,6 +221,9 @@ function App() {
 
       {/* Settings modal */}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+
+      {/* Extract data modal */}
+      {showExtract && <ExtractModal sessionId={activeSessionId} onClose={() => setShowExtract(false)} />}
     </div>
   )
 }

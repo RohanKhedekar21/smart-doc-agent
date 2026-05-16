@@ -8,7 +8,7 @@ from ..db import models
 from ..db.database import get_db
 from ..models import schemas
 from ..services.document_service import chunk_text, extract_text_from_file
-from ..services.rag_service import query_session, save_chunks, summarize_text
+from ..services.rag_service import query_session, save_chunks, summarize_text, extract_structured_data
 
 router = APIRouter(prefix="/api/v1")
 
@@ -197,3 +197,15 @@ def chat_with_session(session_id: str, request: schemas.ChatRequest, db: DBSessi
     db.commit()
 
     return {"answer": answer_text, "sources": sources}
+
+
+# ── Data Extraction ────────────────────────────────────────────────
+
+@router.post("/sessions/{session_id}/extract")
+def extract_data(session_id: str, request: schemas.ChatRequest, db: DBSession = Depends(get_db)):
+    result = extract_structured_data(session_id, request.message)
+
+    if "error" in result and result["error"]:
+        raise HTTPException(status_code=400, detail=result["error"])
+
+    return result

@@ -56,3 +56,10 @@ export const chatWithSession = async (sessionId, message) => {
     const res = await axios.post(`${API_URL}/sessions/${sessionId}/chat`, { message });
     return res.data;
 };
+
+// ── Data Extraction ───────────────────────────────────────────────
+
+export const extractData = async (sessionId, message) => {
+    const res = await axios.post(`${API_URL}/sessions/${sessionId}/extract`, { message });
+    return res.data;
+};

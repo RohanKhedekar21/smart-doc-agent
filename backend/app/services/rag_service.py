@@ -138,3 +138,49 @@ def summarize_text(text: str, filename: str) -> str:
         return response.text
     except Exception as e:
         return f"Document uploaded successfully, but summary generation failed: {e}"
+
+
+def extract_structured_data(session_id: str, query: str) -> dict:
+    """Extract structured data from documents using Gemini and return as JSON table."""
+    store = {}
+    if os.path.exists(VECTOR_STORE_FILE):
+        with open(VECTOR_STORE_FILE, "r") as f:
+            store = json.load(f)
+
+    if session_id not in store or not store[session_id]:
+        return {"columns": [], "rows": [], "error": "No documents found for this session."}
+
+    # Gather all text from the session (not just top-3 chunks)
+    all_text = "\n\n".join([item["text"] for item in store[session_id][:10]])
+    sources = list(set([item["filename"] for item in store[session_id][:10]]))
+
+    try:
+        client = _get_client()
+        prompt = (
+            "You are a data extraction assistant. Extract structured data from the "
+            "following document text based on the user's request.\n\n"
+            "IMPORTANT: Respond ONLY with valid JSON in this exact format:\n"
+            '{"columns": ["Column1", "Column2"], "rows": [["value1", "value2"]]}\n\n'
+            "Do not include any text, explanation, or markdown formatting outside the JSON.\n\n"
+            f"Document text:\n{all_text}\n\n"
+            f"Extraction request: {query}"
+        )
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+
+        # Parse JSON from the response (strip markdown fences if present)
+        raw = response.text.strip()
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[1]
+            raw = raw.rsplit("```", 1)[0]
+        raw = raw.strip()
+
+        data = json.loads(raw)
+        data["sources"] = sources
+        return data
+    except json.JSONDecodeError:
+        return {"columns": [], "rows": [], "error": "Failed to parse structured data from AI response."}
+    except Exception as e:
+        return {"columns": [], "rows": [], "error": str(e)}
