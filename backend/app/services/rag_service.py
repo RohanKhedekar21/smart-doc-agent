@@ -103,7 +103,9 @@ def query_session(session_id: str, query: str) -> dict:
         prompt = (
             "You are a document analysis assistant. Answer the user's question "
             "based strictly on the provided context. When referencing specific "
-            "information, mention which source document it came from.\n\n"
+            "information, mention which source document it came from. "
+            "Use markdown formatting (like tables, bold text, lists) where appropriate to organize data, "
+            "and include relevant emojis to make your response engaging.\n\n"
             f"Context:\n{context}\n\n"
             f"Question: {query}"
         )
@@ -238,7 +240,8 @@ def compare_documents(session_id: str, doc1_filename: str, doc2_filename: str, q
         prompt = (
             "You are an expert document analysis assistant. The user wants you to compare two specific documents.\n"
             "Analyze the differences and similarities between Document A and Document B based strictly on the user's query.\n"
-            "Provide a clear, structured comparison.\n\n"
+            "Provide a clear, structured comparison. Use markdown formatting (like tables, bold text, lists) where appropriate to organize data, "
+            "and include relevant emojis to make your response engaging.\n\n"
             f"--- Document A: {doc1_filename} (Relevant Excerpts) ---\n{doc1_text}\n\n"
             f"--- Document B: {doc2_filename} (Relevant Excerpts) ---\n{doc2_text}\n\n"
             f"User's Comparison Query: {query}"

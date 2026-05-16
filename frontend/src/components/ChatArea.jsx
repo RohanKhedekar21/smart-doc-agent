@@ -1,5 +1,7 @@
 import { Send, FileText } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 export default function ChatArea({ messages, onSendMessage, isLoading }) {
   const [inputMessage, setInputMessage] = useState("");
@@ -57,6 +59,12 @@ export default function ChatArea({ messages, onSendMessage, isLoading }) {
                     Document Summary
                   </div>
                   <div className="text-gray-200 whitespace-pre-wrap">{msg.text}</div>
+                </div>
+              ) : msg.sender === 'ai' ? (
+                <div className="markdown-content">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {displayText}
+                  </ReactMarkdown>
                 </div>
               ) : (
                 <span className="whitespace-pre-wrap">{displayText}</span>
