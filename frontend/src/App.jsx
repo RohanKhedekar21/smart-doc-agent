@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { FileText, PanelRightOpen, Table } from 'lucide-react'
+import { FileText, PanelRightOpen, Table, SplitSquareHorizontal } from 'lucide-react'
 import Sidebar from './components/Sidebar'
 import ChatArea from './components/ChatArea'
 import UploadZone from './components/UploadZone'
 import DocumentPanel from './components/DocumentPanel'
 import SettingsModal from './components/SettingsModal'
 import ExtractModal from './components/ExtractModal'
+import CompareModal from './components/CompareModal'
 import { 
   getSessions, createSession, renameSession, deleteSession,
   uploadFile, chatWithSession, getDocuments, deleteDocument, getMessages
@@ -21,6 +22,7 @@ function App() {
   const [showDocPanel, setShowDocPanel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showExtract, setShowExtract] = useState(false);
+  const [showCompare, setShowCompare] = useState(false);
 
   useEffect(() => {
     fetchSessions();
@@ -193,6 +195,13 @@ function App() {
               <Table size={18} />
             </button>
             <button 
+              onClick={() => setShowCompare(true)}
+              className="p-2.5 rounded-xl border transition-all duration-200 bg-white/5 border-panel-border text-gray-400 hover:text-orange-400 hover:border-orange-500/30"
+              title="Compare Documents"
+            >
+              <SplitSquareHorizontal size={18} />
+            </button>
+            <button 
               onClick={() => setShowDocPanel(!showDocPanel)}
               className={`p-2.5 rounded-xl border transition-all duration-200 ${
                 showDocPanel 
@@ -224,6 +233,16 @@ function App() {
 
       {/* Extract data modal */}
       {showExtract && <ExtractModal sessionId={activeSessionId} onClose={() => setShowExtract(false)} />}
+
+      {/* Compare modal */}
+      {showCompare && (
+        <CompareModal 
+          sessionId={activeSessionId} 
+          documents={documents} 
+          onClose={() => setShowCompare(false)}
+          onComparisonComplete={() => fetchSessionMessages(activeSessionId)}
+        />
+      )}
     </div>
   )
 }

@@ -25,3 +25,9 @@ class MessageResponse(BaseModel):
     text: str
     sender: str
     session_id: str
+
+
+class CompareRequest(BaseModel):
+    doc1_filename: str
+    doc2_filename: str
+    query: str

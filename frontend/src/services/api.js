@@ -63,3 +63,14 @@ export const extractData = async (sessionId, message) => {
     const res = await axios.post(`${API_URL}/sessions/${sessionId}/extract`, { message });
     return res.data;
 };
+
+// ── Document Comparison ───────────────────────────────────────────
+
+export const compareDocuments = async (sessionId, doc1Filename, doc2Filename, query) => {
+    const res = await axios.post(`${API_URL}/sessions/${sessionId}/compare`, {
+        doc1_filename: doc1Filename,
+        doc2_filename: doc2Filename,
+        query: query
+    });
+    return res.data;
+};

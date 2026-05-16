@@ -8,7 +8,7 @@ from ..db import models
 from ..db.database import get_db
 from ..models import schemas
 from ..services.document_service import chunk_text, extract_text_from_file
-from ..services.rag_service import query_session, save_chunks, summarize_text, extract_structured_data
+from ..services.rag_service import query_session, save_chunks, summarize_text, extract_structured_data, compare_documents
 
 router = APIRouter(prefix="/api/v1")
 
@@ -207,5 +207,26 @@ def extract_data(session_id: str, request: schemas.ChatRequest, db: DBSession = 
 
     if "error" in result and result["error"]:
         raise HTTPException(status_code=400, detail=result["error"])
+
+    return result
+
+
+# ── Document Comparison ────────────────────────────────────────────
+
+@router.post("/sessions/{session_id}/compare")
+def compare_docs(session_id: str, request: schemas.CompareRequest, db: DBSession = Depends(get_db)):
+    result = compare_documents(session_id, request.doc1_filename, request.doc2_filename, request.query)
+
+    if result.get("error"):
+        raise HTTPException(status_code=400, detail=result.get("answer"))
+
+    # Optional: Save the comparison as an AI message in the chat history
+    ai_msg = models.Message(
+        session_id=session_id,
+        sender="ai",
+        text=f"⚖️ **Comparison Report:** {request.doc1_filename} vs {request.doc2_filename}\n\n{result['answer']}"
+    )
+    db.add(ai_msg)
+    db.commit()
 
     return result

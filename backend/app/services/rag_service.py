@@ -184,3 +184,49 @@ def extract_structured_data(session_id: str, query: str) -> dict:
         return {"columns": [], "rows": [], "error": "Failed to parse structured data from AI response."}
     except Exception as e:
         return {"columns": [], "rows": [], "error": str(e)}
+
+
+def compare_documents(session_id: str, doc1_filename: str, doc2_filename: str, query: str) -> dict:
+    """Compare two specific documents based on a user query."""
+    store = {}
+    if os.path.exists(VECTOR_STORE_FILE):
+        with open(VECTOR_STORE_FILE, "r") as f:
+            store = json.load(f)
+
+    if session_id not in store or not store[session_id]:
+        return {"answer": "No documents found for this session.", "error": True}
+
+    doc1_text = ""
+    doc2_text = ""
+
+    # Reconstruct document text from chunks
+    for item in store[session_id]:
+        if item["filename"] == doc1_filename:
+            doc1_text += item["text"] + "\n\n"
+        elif item["filename"] == doc2_filename:
+            doc2_text += item["text"] + "\n\n"
+
+    if not doc1_text:
+        return {"answer": f"Could not find document '{doc1_filename}' in this session.", "error": True}
+    if not doc2_text:
+        return {"answer": f"Could not find document '{doc2_filename}' in this session.", "error": True}
+
+    try:
+        client = _get_client()
+        # Truncate text to stay within reasonable limits (Gemini flash has a large context window, but just in case)
+        # Using 10000 chars per doc as a safe preview
+        prompt = (
+            "You are an expert document analysis assistant. The user wants you to compare two specific documents.\n"
+            "Analyze the differences and similarities between Document A and Document B based strictly on the user's query.\n"
+            "Provide a clear, structured comparison.\n\n"
+            f"--- Document A: {doc1_filename} ---\n{doc1_text[:10000]}\n\n"
+            f"--- Document B: {doc2_filename} ---\n{doc2_text[:10000]}\n\n"
+            f"User's Comparison Query: {query}"
+        )
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        return {"answer": response.text, "sources": [doc1_filename, doc2_filename], "error": False}
+    except Exception as e:
+        return {"answer": f"Comparison failed. Error: {e}", "error": True}
