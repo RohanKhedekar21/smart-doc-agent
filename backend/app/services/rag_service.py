@@ -150,9 +150,19 @@ def extract_structured_data(session_id: str, query: str) -> dict:
     if session_id not in store or not store[session_id]:
         return {"columns": [], "rows": [], "error": "No documents found for this session."}
 
-    # Gather all text from the session (not just top-3 chunks)
-    all_text = "\n\n".join([item["text"] for item in store[session_id][:10]])
-    sources = list(set([item["filename"] for item in store[session_id][:10]]))
+    # Semantic Retrieval: Find the top 5 chunks most relevant to the extraction query
+    query_vector = embed_text(query)
+    results = []
+    for item in store[session_id]:
+        sim = cosine_similarity(query_vector, item["vector"])
+        results.append((sim, item["text"], item["filename"]))
+
+    # Sort by highest similarity
+    results.sort(reverse=True, key=lambda x: x[0])
+    top_chunks = results[:5]
+
+    all_text = "\n\n".join([f"[Source: {r[2]}]\n{r[1]}" for r in top_chunks])
+    sources = list(dict.fromkeys([r[2] for r in top_chunks]))
 
     try:
         client = _get_client()
@@ -196,31 +206,41 @@ def compare_documents(session_id: str, doc1_filename: str, doc2_filename: str, q
     if session_id not in store or not store[session_id]:
         return {"answer": "No documents found for this session.", "error": True}
 
-    doc1_text = ""
-    doc2_text = ""
+    # Embed the comparison query
+    query_vector = embed_text(query)
 
-    # Reconstruct document text from chunks
+    doc1_results = []
+    doc2_results = []
+
+    # Filter chunks by document and calculate similarity
     for item in store[session_id]:
         if item["filename"] == doc1_filename:
-            doc1_text += item["text"] + "\n\n"
+            sim = cosine_similarity(query_vector, item["vector"])
+            doc1_results.append((sim, item["text"]))
         elif item["filename"] == doc2_filename:
-            doc2_text += item["text"] + "\n\n"
+            sim = cosine_similarity(query_vector, item["vector"])
+            doc2_results.append((sim, item["text"]))
 
-    if not doc1_text:
+    if not doc1_results:
         return {"answer": f"Could not find document '{doc1_filename}' in this session.", "error": True}
-    if not doc2_text:
+    if not doc2_results:
         return {"answer": f"Could not find document '{doc2_filename}' in this session.", "error": True}
+
+    # Sort and take top 4 chunks for each document
+    doc1_results.sort(reverse=True, key=lambda x: x[0])
+    doc2_results.sort(reverse=True, key=lambda x: x[0])
+
+    doc1_text = "\n\n... ".join([r[1] for r in doc1_results[:4]])
+    doc2_text = "\n\n... ".join([r[1] for r in doc2_results[:4]])
 
     try:
         client = _get_client()
-        # Truncate text to stay within reasonable limits (Gemini flash has a large context window, but just in case)
-        # Using 10000 chars per doc as a safe preview
         prompt = (
             "You are an expert document analysis assistant. The user wants you to compare two specific documents.\n"
             "Analyze the differences and similarities between Document A and Document B based strictly on the user's query.\n"
             "Provide a clear, structured comparison.\n\n"
-            f"--- Document A: {doc1_filename} ---\n{doc1_text[:10000]}\n\n"
-            f"--- Document B: {doc2_filename} ---\n{doc2_text[:10000]}\n\n"
+            f"--- Document A: {doc1_filename} (Relevant Excerpts) ---\n{doc1_text}\n\n"
+            f"--- Document B: {doc2_filename} (Relevant Excerpts) ---\n{doc2_text}\n\n"
             f"User's Comparison Query: {query}"
         )
         response = client.models.generate_content(
