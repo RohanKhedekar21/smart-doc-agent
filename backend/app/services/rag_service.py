@@ -70,15 +70,18 @@ def save_chunks(session_id: str, chunks: list, filename: str):
         json.dump(store, f)
 
 
-def query_session(session_id: str, query: str) -> str:
-    """Search the vector store and generate an answer using Gemini."""
+def query_session(session_id: str, query: str) -> dict:
+    """Search the vector store and generate an answer with source citations."""
     store = {}
     if os.path.exists(VECTOR_STORE_FILE):
         with open(VECTOR_STORE_FILE, "r") as f:
             store = json.load(f)
 
     if session_id not in store or not store[session_id]:
-        return "No documents found for this session. Please upload a document first."
+        return {
+            "answer": "No documents found for this session. Please upload a document first.",
+            "sources": []
+        }
 
     query_vector = embed_text(query)
 
@@ -90,12 +93,17 @@ def query_session(session_id: str, query: str) -> str:
     results.sort(reverse=True, key=lambda x: x[0])
     top_chunks = results[:3]
 
-    context = "\n\n".join([f"From {r[2]}:\n{r[1]}" for r in top_chunks])
+    # Collect unique source filenames in relevance order
+    sources = list(dict.fromkeys([r[2] for r in top_chunks]))
+
+    context = "\n\n".join([f"[Source: {r[2]}]\n{r[1]}" for r in top_chunks])
 
     try:
         client = _get_client()
         prompt = (
-            "Answer the user's question based strictly on the following context.\n\n"
+            "You are a document analysis assistant. Answer the user's question "
+            "based strictly on the provided context. When referencing specific "
+            "information, mention which source document it came from.\n\n"
             f"Context:\n{context}\n\n"
             f"Question: {query}"
         )
@@ -103,9 +111,12 @@ def query_session(session_id: str, query: str) -> str:
             model="gemini-2.5-flash",
             contents=prompt,
         )
-        return response.text
+        return {"answer": response.text, "sources": sources}
     except Exception as e:
-        return f"Failed to generate answer. Ensure GEMINI_API_KEY is set. Error: {e}"
+        return {
+            "answer": f"Failed to generate answer. Ensure GEMINI_API_KEY is set. Error: {e}",
+            "sources": []
+        }
 
 
 def summarize_text(text: str, filename: str) -> str:

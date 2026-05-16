@@ -175,16 +175,25 @@ def chat_with_session(session_id: str, request: schemas.ChatRequest, db: DBSessi
     db.add(user_msg)
     db.commit()
 
-    # Get AI answer
-    answer = query_session(session_id, request.message)
+    # Get AI answer with source citations
+    result = query_session(session_id, request.message)
+    answer_text = result["answer"]
+    sources = result["sources"]
 
-    # Save AI message
+    # Append source citations to the saved message
+    if sources:
+        citation_line = "\n\n📌 Sources: " + ", ".join(sources)
+        saved_text = answer_text + citation_line
+    else:
+        saved_text = answer_text
+
+    # Save AI message with citations
     ai_msg = models.Message(
         session_id=session_id,
         sender="ai",
-        text=answer
+        text=saved_text
     )
     db.add(ai_msg)
     db.commit()
 
-    return {"answer": answer}
+    return {"answer": answer_text, "sources": sources}

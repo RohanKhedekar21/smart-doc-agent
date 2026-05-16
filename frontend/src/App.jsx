@@ -142,7 +142,8 @@ function App() {
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         text: res.answer,
-        sender: "ai"
+        sender: "ai",
+        sources: res.sources || []
       }]);
     } catch (e) {
       setMessages(prev => [...prev, {

@@ -22,6 +22,22 @@ export default function ChatArea({ messages, onSendMessage, isLoading }) {
       <div className="flex-1 overflow-y-auto p-10 flex flex-col gap-6 scroll-smooth">
         {messages.map((msg) => {
           const isDocSummary = msg.sender === 'ai' && msg.text.startsWith('📄');
+          const hasSources = msg.sources && msg.sources.length > 0;
+          // For messages loaded from DB, detect inline citations
+          const hasInlineCitation = msg.sender === 'ai' && msg.text.includes('📌 Sources:');
+
+          // Split out inline citation from display text
+          let displayText = msg.text;
+          let inlineSources = [];
+          if (hasInlineCitation && !hasSources) {
+            const parts = msg.text.split('\n\n📌 Sources: ');
+            displayText = parts[0];
+            if (parts[1]) {
+              inlineSources = parts[1].split(', ');
+            }
+          }
+
+          const sourcesToShow = hasSources ? msg.sources : inlineSources;
 
           return (
             <div 
@@ -43,7 +59,25 @@ export default function ChatArea({ messages, onSendMessage, isLoading }) {
                   <div className="text-gray-200 whitespace-pre-wrap">{msg.text}</div>
                 </div>
               ) : (
-                <span className="whitespace-pre-wrap">{msg.text}</span>
+                <span className="whitespace-pre-wrap">{displayText}</span>
+              )}
+
+              {/* Source citation badges */}
+              {sourcesToShow.length > 0 && !isDocSummary && (
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/10 flex-wrap">
+                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                    <FileText size={12} />
+                    Sources:
+                  </span>
+                  {sourcesToShow.map((src, i) => (
+                    <span 
+                      key={i} 
+                      className="text-xs bg-accent/15 text-accent border border-accent/20 px-2.5 py-1 rounded-full font-medium"
+                    >
+                      {src}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
           );
