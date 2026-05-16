@@ -106,3 +106,24 @@ def query_session(session_id: str, query: str) -> str:
         return response.text
     except Exception as e:
         return f"Failed to generate answer. Ensure GEMINI_API_KEY is set. Error: {e}"
+
+
+def summarize_text(text: str, filename: str) -> str:
+    """Generate a concise AI summary of an uploaded document."""
+    try:
+        client = _get_client()
+        # Use only the first 3000 chars to stay within free-tier limits
+        preview = text[:3000]
+        prompt = (
+            f"You are a document analysis assistant. The user just uploaded a file named \"{filename}\". "
+            "Provide a concise 2-3 sentence summary of the document's contents. "
+            "Focus on the key topics, purpose, and any notable details.\n\n"
+            f"Document text:\n{preview}"
+        )
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        return response.text
+    except Exception as e:
+        return f"Document uploaded successfully, but summary generation failed: {e}"

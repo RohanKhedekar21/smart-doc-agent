@@ -107,12 +107,9 @@ function App() {
     if (!activeSessionId) return alert("Please select or create a session first.");
     setIsUploading(true);
     try {
-      const res = await uploadFile(activeSessionId, file);
-      setMessages(prev => [...prev, {
-        id: Date.now(), 
-        text: `✅ Processed "${res.filename}" (${res.chunks_processed} chunks). You can now ask questions!`, 
-        sender: "ai"
-      }]);
+      await uploadFile(activeSessionId, file);
+      // Reload messages from DB (the backend saved the AI summary automatically)
+      fetchSessionMessages(activeSessionId);
       fetchDocuments(activeSessionId);
     } catch (e) {
       alert("Upload failed. Make sure your Python backend is running.");

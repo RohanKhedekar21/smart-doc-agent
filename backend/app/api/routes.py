@@ -8,7 +8,7 @@ from ..db import models
 from ..db.database import get_db
 from ..models import schemas
 from ..services.document_service import chunk_text, extract_text_from_file
-from ..services.rag_service import query_session, save_chunks
+from ..services.rag_service import query_session, save_chunks, summarize_text
 
 router = APIRouter(prefix="/api/v1")
 
@@ -122,10 +122,23 @@ async def upload_document(
         db.add(doc)
         db.commit()
 
+        # Auto-summarize the uploaded document
+        summary = summarize_text(text, file.filename)
+
+        # Save the summary as an AI message in chat history
+        ai_msg = models.Message(
+            session_id=session_id,
+            sender="ai",
+            text=f"📄 **{file.filename}** processed ({len(chunks)} chunks).\n\n{summary}"
+        )
+        db.add(ai_msg)
+        db.commit()
+
         return {
             "status": "success",
             "filename": file.filename,
             "chunks_processed": len(chunks),
+            "summary": summary,
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

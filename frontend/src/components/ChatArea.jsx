@@ -1,4 +1,4 @@
-import { Send } from 'lucide-react'
+import { Send, FileText } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 
 export default function ChatArea({ messages, onSendMessage, isLoading }) {
@@ -20,18 +20,34 @@ export default function ChatArea({ messages, onSendMessage, isLoading }) {
   return (
     <>
       <div className="flex-1 overflow-y-auto p-10 flex flex-col gap-6 scroll-smooth">
-        {messages.map((msg) => (
-          <div 
-            key={msg.id} 
-            className={`max-w-[80%] p-4 rounded-2xl leading-relaxed text-[15px] animate-fade-in border ${
-              msg.sender === 'user' 
-                ? 'self-end bg-msg-user border-accent/20 rounded-br-sm' 
-                : 'self-start bg-msg-ai border-panel-border rounded-bl-sm'
-            }`}
-          >
-            {msg.text}
-          </div>
-        ))}
+        {messages.map((msg) => {
+          const isDocSummary = msg.sender === 'ai' && msg.text.startsWith('📄');
+
+          return (
+            <div 
+              key={msg.id} 
+              className={`max-w-[80%] p-4 rounded-2xl leading-relaxed text-[15px] animate-fade-in border ${
+                isDocSummary
+                  ? 'self-start bg-emerald-500/10 border-emerald-500/30 rounded-bl-sm border-l-4 border-l-emerald-400'
+                  : msg.sender === 'user' 
+                    ? 'self-end bg-msg-user border-accent/20 rounded-br-sm' 
+                    : 'self-start bg-msg-ai border-panel-border rounded-bl-sm'
+              }`}
+            >
+              {isDocSummary ? (
+                <div>
+                  <div className="flex items-center gap-2 mb-2 text-emerald-400 font-semibold text-xs uppercase tracking-wider">
+                    <FileText size={14} />
+                    Document Summary
+                  </div>
+                  <div className="text-gray-200 whitespace-pre-wrap">{msg.text}</div>
+                </div>
+              ) : (
+                <span className="whitespace-pre-wrap">{msg.text}</span>
+              )}
+            </div>
+          );
+        })}
 
         {isLoading && (
           <div className="self-start bg-msg-ai border border-panel-border rounded-2xl rounded-bl-sm p-4 max-w-[80%] animate-pulse">
