@@ -18,3 +18,10 @@ class DocumentResponse(BaseModel):
     id: int
     filename: str
     session_id: str
+
+
+class MessageResponse(BaseModel):
+    id: int
+    text: str
+    sender: str
+    session_id: str

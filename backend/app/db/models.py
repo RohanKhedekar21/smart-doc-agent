@@ -20,3 +20,13 @@ class Document(Base):
     filename = Column(String)
     extracted_text = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String, ForeignKey("sessions.id"))
+    sender = Column(String)  # 'user' or 'ai'
+    text = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

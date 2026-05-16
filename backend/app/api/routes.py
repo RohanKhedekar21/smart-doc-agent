@@ -53,9 +53,15 @@ def delete_session(session_id: str, db: DBSession = Depends(get_db)):
     session = db.query(models.Session).filter(models.Session.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Delete associated documents and messages
     db.query(models.Document).filter(
         models.Document.session_id == session_id
     ).delete()
+    db.query(models.Message).filter(
+        models.Message.session_id == session_id
+    ).delete()
+    
     db.delete(session)
     db.commit()
     return {"status": "deleted"}
@@ -125,9 +131,47 @@ async def upload_document(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-# ── Chat endpoint ──────────────────────────────────────────────────
+# ── Chat & Messages ────────────────────────────────────────────────
+
+@router.get("/sessions/{session_id}/messages", response_model=List[schemas.MessageResponse])
+def get_messages(session_id: str, db: DBSession = Depends(get_db)):
+    messages = (
+        db.query(models.Message)
+        .filter(models.Message.session_id == session_id)
+        .order_by(models.Message.created_at.asc())
+        .all()
+    )
+    return [
+        {
+            "id": m.id,
+            "text": m.text,
+            "sender": m.sender,
+            "session_id": m.session_id
+        }
+        for m in messages
+    ]
 
 @router.post("/sessions/{session_id}/chat")
-def chat_with_session(session_id: str, request: schemas.ChatRequest):
+def chat_with_session(session_id: str, request: schemas.ChatRequest, db: DBSession = Depends(get_db)):
+    # Save user message
+    user_msg = models.Message(
+        session_id=session_id,
+        sender="user",
+        text=request.message
+    )
+    db.add(user_msg)
+    db.commit()
+
+    # Get AI answer
     answer = query_session(session_id, request.message)
+
+    # Save AI message
+    ai_msg = models.Message(
+        session_id=session_id,
+        sender="ai",
+        text=answer
+    )
+    db.add(ai_msg)
+    db.commit()
+
     return {"answer": answer}

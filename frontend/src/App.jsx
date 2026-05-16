@@ -7,15 +7,13 @@ import DocumentPanel from './components/DocumentPanel'
 import SettingsModal from './components/SettingsModal'
 import { 
   getSessions, createSession, renameSession, deleteSession,
-  uploadFile, chatWithSession, getDocuments, deleteDocument 
+  uploadFile, chatWithSession, getDocuments, deleteDocument, getMessages
 } from './services/api'
 
 function App() {
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Hello! I'm your Smart Document Agent. Create a session and upload a file to get started.", sender: "ai" }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
@@ -26,12 +24,14 @@ function App() {
     fetchSessions();
   }, []);
 
-  // Fetch documents whenever active session changes
+  // Fetch documents and messages whenever active session changes
   useEffect(() => {
     if (activeSessionId) {
-      fetchDocuments();
+      fetchDocuments(activeSessionId);
+      fetchSessionMessages(activeSessionId);
     } else {
       setDocuments([]);
+      setMessages([]);
     }
   }, [activeSessionId]);
 
@@ -47,12 +47,25 @@ function App() {
     }
   };
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = async (sessionId) => {
     try {
-      const data = await getDocuments(activeSessionId);
+      const data = await getDocuments(sessionId);
       setDocuments(data);
     } catch (e) {
       console.error("Failed to fetch documents", e);
+    }
+  };
+
+  const fetchSessionMessages = async (sessionId) => {
+    try {
+      const data = await getMessages(sessionId);
+      if (data.length === 0) {
+        setMessages([{ id: 'default', text: "Hello! I'm your Smart Document Agent. Create a session and upload a file to get started.", sender: "ai" }]);
+      } else {
+        setMessages(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch messages", e);
     }
   };
 
@@ -61,7 +74,7 @@ function App() {
       const newSession = await createSession();
       setSessions([newSession, ...sessions]);
       setActiveSessionId(newSession.session_id);
-      setMessages([{ id: 1, text: "New session created! Upload a document to get started.", sender: "ai" }]);
+      setMessages([{ id: 'default', text: "New session created! Upload a document to get started.", sender: "ai" }]);
       setDocuments([]);
     } catch (e) {
       console.error("Failed to create session", e);
@@ -84,7 +97,6 @@ function App() {
       setSessions(remaining);
       if (activeSessionId === sessionId) {
         setActiveSessionId(remaining.length > 0 ? remaining[0].session_id : null);
-        setMessages([{ id: 1, text: "Session deleted. Select or create a new one.", sender: "ai" }]);
       }
     } catch (e) {
       console.error("Failed to delete session", e);
@@ -101,7 +113,7 @@ function App() {
         text: `✅ Processed "${res.filename}" (${res.chunks_processed} chunks). You can now ask questions!`, 
         sender: "ai"
       }]);
-      fetchDocuments();
+      fetchDocuments(activeSessionId);
     } catch (e) {
       alert("Upload failed. Make sure your Python backend is running.");
     }

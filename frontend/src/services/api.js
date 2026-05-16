@@ -45,7 +45,12 @@ export const deleteDocument = async (sessionId, docId) => {
     return res.data;
 };
 
-// ── Chat ──────────────────────────────────────────────────────────
+// ── AI Chat Engine & History ───────────────────────────────────────
+
+export const getMessages = async (sessionId) => {
+    const res = await axios.get(`${API_URL}/sessions/${sessionId}/messages`);
+    return res.data;
+};
 
 export const chatWithSession = async (sessionId, message) => {
     const res = await axios.post(`${API_URL}/sessions/${sessionId}/chat`, { message });
