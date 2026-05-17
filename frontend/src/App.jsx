@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FileText, PanelRightOpen, Table, SplitSquareHorizontal } from 'lucide-react'
+import { FileText, PanelRightOpen, Table, SplitSquareHorizontal, LogOut } from 'lucide-react'
 import Sidebar from './components/Sidebar'
 import ChatArea from './components/ChatArea'
 import UploadZone from './components/UploadZone'
@@ -7,12 +7,16 @@ import DocumentPanel from './components/DocumentPanel'
 import SettingsModal from './components/SettingsModal'
 import ExtractModal from './components/ExtractModal'
 import CompareModal from './components/CompareModal'
+import LoginScreen from './components/LoginScreen'
 import { 
   getSessions, createSession, renameSession, deleteSession,
-  uploadFile, chatWithSession, getDocuments, deleteDocument, getMessages
+  uploadFile, chatWithSession, getDocuments, deleteDocument, getMessages,
+  getMe, logout
 } from './services/api'
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -24,9 +28,40 @@ function App() {
   const [showExtract, setShowExtract] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
 
+  // Check authentication on mount
   useEffect(() => {
-    fetchSessions();
+    checkAuth();
   }, []);
+
+  const checkAuth = async () => {
+    try {
+      const me = await getMe();
+      setUser(me);
+    } catch {
+      setUser(null);
+    } finally {
+      setAuthChecked(true);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // Cookie will be cleared regardless
+    }
+    setUser(null);
+    setSessions([]);
+    setActiveSessionId(null);
+    setMessages([]);
+    setDocuments([]);
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchSessions();
+    }
+  }, [user]);
 
   // Fetch documents and messages whenever active session changes
   useEffect(() => {
@@ -159,6 +194,23 @@ function App() {
     setIsThinking(false);
   };
 
+  // Show loading while checking auth
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-bg-color">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-full border-4 border-accent/30 border-t-accent animate-spin" />
+          <p className="text-gray-400 text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login screen if not authenticated
+  if (!user) {
+    return <LoginScreen />;
+  }
+
   const activeSession = sessions.find(s => s.session_id === activeSessionId);
 
   return (
@@ -212,6 +264,29 @@ function App() {
             >
               <PanelRightOpen size={18} />
             </button>
+
+            {/* User profile & logout */}
+            <div className="flex items-center gap-2 ml-2 pl-3 border-l border-panel-border">
+              {user.picture ? (
+                <img
+                  src={user.picture}
+                  alt={user.name}
+                  className="w-8 h-8 rounded-full border border-panel-border"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-sm font-semibold text-accent">
+                  {user.name?.[0] || '?'}
+                </div>
+              )}
+              <button
+                onClick={handleLogout}
+                className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+                title="Logout"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
           </div>
         </div>
 

@@ -1,13 +1,12 @@
-import json
-import math
 import os
 
 from dotenv import load_dotenv
 from google import genai
+from sqlalchemy.orm import Session as DBSession
+
+from ..db import models
 
 load_dotenv()
-
-VECTOR_STORE_FILE = "vector_store.json"
 
 # Initialize the Gemini client once
 _client = None
@@ -31,6 +30,7 @@ def embed_text(text: str) -> list:
         result = client.models.embed_content(
             model="gemini-embedding-001",
             contents=text,
+            config=dict(output_dimensionality=768),
         )
         return result.embeddings[0].values
     except Exception as e:
@@ -38,46 +38,29 @@ def embed_text(text: str) -> list:
         return [0.0] * 768
 
 
-def cosine_similarity(v1: list, v2: list) -> float:
-    """Calculate cosine similarity between two vectors."""
-    if len(v1) != len(v2):
-        return 0.0
-    dot_product = sum(a * b for a, b in zip(v1, v2))
-    mag1 = math.sqrt(sum(a * a for a in v1))
-    mag2 = math.sqrt(sum(b * b for b in v2))
-    if mag1 == 0 or mag2 == 0:
-        return 0.0
-    return dot_product / (mag1 * mag2)
-
-
-def save_chunks(session_id: str, chunks: list, filename: str):
-    """Embed text chunks and save them to the local vector store."""
-    store = {}
-    if os.path.exists(VECTOR_STORE_FILE):
-        with open(VECTOR_STORE_FILE, "r") as f:
-            store = json.load(f)
-
-    if session_id not in store:
-        store[session_id] = []
-
+def save_chunks(db: DBSession, session_id: str, document_id: int, chunks: list, filename: str):
+    """Embed text chunks and save them to the PostgreSQL vector store."""
     for chunk in chunks:
         vector = embed_text(chunk)
-        store[session_id].append(
-            {"text": chunk, "vector": vector, "filename": filename}
+        db_chunk = models.DocumentChunk(
+            document_id=document_id,
+            session_id=session_id,
+            filename=filename,
+            text=chunk,
+            embedding=vector,
         )
+        db.add(db_chunk)
+    db.commit()
 
-    with open(VECTOR_STORE_FILE, "w") as f:
-        json.dump(store, f)
 
-
-def query_session(session_id: str, query: str) -> dict:
+def query_session(db: DBSession, session_id: str, query: str) -> dict:
     """Search the vector store and generate an answer with source citations."""
-    store = {}
-    if os.path.exists(VECTOR_STORE_FILE):
-        with open(VECTOR_STORE_FILE, "r") as f:
-            store = json.load(f)
+    # Check if there are any chunks for this session
+    chunk_count = db.query(models.DocumentChunk).filter(
+        models.DocumentChunk.session_id == session_id
+    ).count()
 
-    if session_id not in store or not store[session_id]:
+    if chunk_count == 0:
         return {
             "answer": "No documents found for this session. Please upload a document first.",
             "sources": []
@@ -85,18 +68,18 @@ def query_session(session_id: str, query: str) -> dict:
 
     query_vector = embed_text(query)
 
-    results = []
-    for item in store[session_id]:
-        sim = cosine_similarity(query_vector, item["vector"])
-        results.append((sim, item["text"], item["filename"]))
-
-    results.sort(reverse=True, key=lambda x: x[0])
-    top_chunks = results[:3]
+    # Use pgvector cosine distance to find top 3 most relevant chunks
+    results = (
+        db.query(models.DocumentChunk)
+        .filter(models.DocumentChunk.session_id == session_id)
+        .order_by(models.DocumentChunk.embedding.cosine_distance(query_vector))
+        .limit(3)
+        .all()
+    )
 
     # Collect unique source filenames in relevance order
-    sources = list(dict.fromkeys([r[2] for r in top_chunks]))
-
-    context = "\n\n".join([f"[Source: {r[2]}]\n{r[1]}" for r in top_chunks])
+    sources = list(dict.fromkeys([r.filename for r in results]))
+    context = "\n\n".join([f"[Source: {r.filename}]\n{r.text}" for r in results])
 
     try:
         client = _get_client()
@@ -142,29 +125,30 @@ def summarize_text(text: str, filename: str) -> str:
         return f"Document uploaded successfully, but summary generation failed: {e}"
 
 
-def extract_structured_data(session_id: str, query: str) -> dict:
+def extract_structured_data(db: DBSession, session_id: str, query: str) -> dict:
     """Extract structured data from documents using Gemini and return as JSON table."""
-    store = {}
-    if os.path.exists(VECTOR_STORE_FILE):
-        with open(VECTOR_STORE_FILE, "r") as f:
-            store = json.load(f)
+    import json
 
-    if session_id not in store or not store[session_id]:
+    chunk_count = db.query(models.DocumentChunk).filter(
+        models.DocumentChunk.session_id == session_id
+    ).count()
+
+    if chunk_count == 0:
         return {"columns": [], "rows": [], "error": "No documents found for this session."}
 
     # Semantic Retrieval: Find the top 5 chunks most relevant to the extraction query
     query_vector = embed_text(query)
-    results = []
-    for item in store[session_id]:
-        sim = cosine_similarity(query_vector, item["vector"])
-        results.append((sim, item["text"], item["filename"]))
 
-    # Sort by highest similarity
-    results.sort(reverse=True, key=lambda x: x[0])
-    top_chunks = results[:5]
+    results = (
+        db.query(models.DocumentChunk)
+        .filter(models.DocumentChunk.session_id == session_id)
+        .order_by(models.DocumentChunk.embedding.cosine_distance(query_vector))
+        .limit(5)
+        .all()
+    )
 
-    all_text = "\n\n".join([f"[Source: {r[2]}]\n{r[1]}" for r in top_chunks])
-    sources = list(dict.fromkeys([r[2] for r in top_chunks]))
+    all_text = "\n\n".join([f"[Source: {r.filename}]\n{r.text}" for r in results])
+    sources = list(dict.fromkeys([r.filename for r in results]))
 
     try:
         client = _get_client()
@@ -198,42 +182,41 @@ def extract_structured_data(session_id: str, query: str) -> dict:
         return {"columns": [], "rows": [], "error": str(e)}
 
 
-def compare_documents(session_id: str, doc1_filename: str, doc2_filename: str, query: str) -> dict:
+def compare_documents(db: DBSession, session_id: str, doc1_filename: str, doc2_filename: str, query: str) -> dict:
     """Compare two specific documents based on a user query."""
-    store = {}
-    if os.path.exists(VECTOR_STORE_FILE):
-        with open(VECTOR_STORE_FILE, "r") as f:
-            store = json.load(f)
-
-    if session_id not in store or not store[session_id]:
-        return {"answer": "No documents found for this session.", "error": True}
-
-    # Embed the comparison query
     query_vector = embed_text(query)
 
-    doc1_results = []
-    doc2_results = []
+    # Get top 4 chunks for doc1 filtered by filename
+    doc1_results = (
+        db.query(models.DocumentChunk)
+        .filter(
+            models.DocumentChunk.session_id == session_id,
+            models.DocumentChunk.filename == doc1_filename,
+        )
+        .order_by(models.DocumentChunk.embedding.cosine_distance(query_vector))
+        .limit(4)
+        .all()
+    )
 
-    # Filter chunks by document and calculate similarity
-    for item in store[session_id]:
-        if item["filename"] == doc1_filename:
-            sim = cosine_similarity(query_vector, item["vector"])
-            doc1_results.append((sim, item["text"]))
-        elif item["filename"] == doc2_filename:
-            sim = cosine_similarity(query_vector, item["vector"])
-            doc2_results.append((sim, item["text"]))
+    # Get top 4 chunks for doc2 filtered by filename
+    doc2_results = (
+        db.query(models.DocumentChunk)
+        .filter(
+            models.DocumentChunk.session_id == session_id,
+            models.DocumentChunk.filename == doc2_filename,
+        )
+        .order_by(models.DocumentChunk.embedding.cosine_distance(query_vector))
+        .limit(4)
+        .all()
+    )
 
     if not doc1_results:
         return {"answer": f"Could not find document '{doc1_filename}' in this session.", "error": True}
     if not doc2_results:
         return {"answer": f"Could not find document '{doc2_filename}' in this session.", "error": True}
 
-    # Sort and take top 4 chunks for each document
-    doc1_results.sort(reverse=True, key=lambda x: x[0])
-    doc2_results.sort(reverse=True, key=lambda x: x[0])
-
-    doc1_text = "\n\n... ".join([r[1] for r in doc1_results[:4]])
-    doc2_text = "\n\n... ".join([r[1] for r in doc2_results[:4]])
+    doc1_text = "\n\n... ".join([r.text for r in doc1_results])
+    doc2_text = "\n\n... ".join([r.text for r in doc2_results])
 
     try:
         client = _get_client()
