@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FileText, PanelRightOpen, Table, SplitSquareHorizontal, LogOut } from 'lucide-react'
+import { FileText, PanelRightOpen, Table, SplitSquareHorizontal, LogOut, Bot } from 'lucide-react'
 import Sidebar from './components/Sidebar'
 import ChatArea from './components/ChatArea'
 import UploadZone from './components/UploadZone'
@@ -143,7 +143,7 @@ function App() {
   };
 
   const handleUpload = async (file) => {
-    if (!activeSessionId) return alert("Please select or create a session first.");
+    if (!activeSessionId) return;
     setIsUploading(true);
     try {
       await uploadFile(activeSessionId, file);
@@ -171,7 +171,7 @@ function App() {
   };
 
   const handleSendMessage = async (text) => {
-    if (!activeSessionId) return alert("Select a session first!");
+    if (!activeSessionId) return;
     const newMsg = { id: Date.now(), text, sender: "user" };
     setMessages(prev => [...prev, newMsg]);
     setIsThinking(true);
@@ -230,43 +230,53 @@ function App() {
         <div className="h-16 flex items-center justify-between px-10 border-b border-panel-border bg-bg-color/60 backdrop-blur-md z-10">
           <div>
             <h2 className="text-lg font-semibold">
-              {activeSession ? activeSession.name : "Select a Session"}
+              {activeSession ? activeSession.name : "Welcome to Smart Agent"}
             </h2>
             <div className="text-[13px] text-gray-400 flex items-center gap-1.5 mt-0.5">
-              <FileText size={14} />
-              {documents.length > 0 ? `${documents.length} document${documents.length > 1 ? 's' : ''} uploaded` : 'No documents yet'}
+              {activeSession ? (
+                <>
+                  <FileText size={14} />
+                  {documents.length > 0 ? `${documents.length} document${documents.length > 1 ? 's' : ''} uploaded` : 'No documents yet'}
+                </>
+              ) : (
+                "Get started by selecting or creating a session"
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <UploadZone onUpload={handleUpload} isUploading={isUploading} />
-            <button 
-              onClick={() => setShowExtract(true)}
-              className="p-2.5 rounded-xl border transition-all duration-200 bg-white/5 border-panel-border text-gray-400 hover:text-white hover:border-white/20"
-              title="Extract structured data"
-            >
-              <Table size={18} />
-            </button>
-            <button 
-              onClick={() => setShowCompare(true)}
-              className="p-2.5 rounded-xl border transition-all duration-200 bg-white/5 border-panel-border text-gray-400 hover:text-orange-400 hover:border-orange-500/30"
-              title="Compare Documents"
-            >
-              <SplitSquareHorizontal size={18} />
-            </button>
-            <button 
-              onClick={() => setShowDocPanel(!showDocPanel)}
-              className={`p-2.5 rounded-xl border transition-all duration-200 ${
-                showDocPanel 
-                  ? 'bg-accent/10 border-accent/30 text-accent' 
-                  : 'bg-white/5 border-panel-border text-gray-400 hover:text-white hover:border-white/20'
-              }`}
-              title="Toggle document panel"
-            >
-              <PanelRightOpen size={18} />
-            </button>
+            {activeSession && (
+              <>
+                <UploadZone onUpload={handleUpload} isUploading={isUploading} />
+                <button 
+                  onClick={() => setShowExtract(true)}
+                  className="p-2.5 rounded-xl border transition-all duration-200 bg-white/5 border-panel-border text-gray-400 hover:text-white hover:border-white/20"
+                  title="Extract structured data"
+                >
+                  <Table size={18} />
+                </button>
+                <button 
+                  onClick={() => setShowCompare(true)}
+                  className="p-2.5 rounded-xl border transition-all duration-200 bg-white/5 border-panel-border text-gray-400 hover:text-orange-400 hover:border-orange-500/30"
+                  title="Compare Documents"
+                >
+                  <SplitSquareHorizontal size={18} />
+                </button>
+                <button 
+                  onClick={() => setShowDocPanel(!showDocPanel)}
+                  className={`p-2.5 rounded-xl border transition-all duration-200 ${
+                    showDocPanel 
+                      ? 'bg-accent/10 border-accent/30 text-accent' 
+                      : 'bg-white/5 border-panel-border text-gray-400 hover:text-white hover:border-white/20'
+                  }`}
+                  title="Toggle document panel"
+                >
+                  <PanelRightOpen size={18} />
+                </button>
+              </>
+            )}
 
             {/* User profile & logout */}
-            <div className="flex items-center gap-2 ml-2 pl-3 border-l border-panel-border">
+            <div className={`flex items-center gap-2 ml-2 pl-3 ${activeSession ? 'border-l border-panel-border' : ''}`}>
               {user.picture ? (
                 <img
                   src={user.picture}
@@ -290,8 +300,28 @@ function App() {
           </div>
         </div>
 
-        {/* Chat area */}
-        <ChatArea messages={messages} onSendMessage={handleSendMessage} isLoading={isThinking} />
+        {/* Main Content Area */}
+        {activeSession ? (
+          <ChatArea messages={messages} onSendMessage={handleSendMessage} isLoading={isThinking} />
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-bg-color to-bg-color/50">
+            <div className="w-24 h-24 bg-accent/10 rounded-[2rem] flex items-center justify-center mb-8 shadow-2xl shadow-accent/20 border border-accent/20">
+              <Bot size={48} className="text-accent drop-shadow-md" />
+            </div>
+            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-4">
+              Your AI Document Analyst
+            </h1>
+            <p className="text-gray-400 text-center max-w-md mb-10 leading-relaxed text-[15px]">
+              Securely upload PDFs, extract structured tables, and chat intelligently with your data using Gemini and pgvector.
+            </p>
+            <button 
+              onClick={handleCreateSession}
+              className="px-8 py-3.5 bg-accent hover:bg-accent-hover text-white font-medium rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] hover:-translate-y-0.5 flex items-center gap-2"
+            >
+              Start New Session
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Document panel (right side) */}
