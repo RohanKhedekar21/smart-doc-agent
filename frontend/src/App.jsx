@@ -187,7 +187,7 @@ function App() {
     } catch (e) {
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
-        text: "Error communicating with the agent. Ensure GEMINI_API_KEY is set in your backend .env file.",
+        text: "Error communicating with the AI agent. Please try again later.",
         sender: "ai"
       }]);
     }
@@ -312,7 +312,7 @@ function App() {
               Your AI Document Analyst
             </h1>
             <p className="text-gray-400 text-center max-w-md mb-10 leading-relaxed text-[15px]">
-              Securely upload PDFs, extract structured tables, and chat intelligently with your data using Gemini and pgvector.
+              Securely upload PDFs, extract structured tables, and chat intelligently with your data using our advanced AI analysis engine.
             </p>
             <button 
               onClick={handleCreateSession}
