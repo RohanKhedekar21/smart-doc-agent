@@ -25,7 +25,7 @@ export default function LoginScreen() {
             Smart<span className="text-gradient">Agent</span>
           </h1>
           <p className="text-gray-400 text-center text-base leading-relaxed">
-            AI-powered document analysis with semantic search, 
+            AI-powered document analysis with intelligent search, 
             data extraction, and multi-document comparison.
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function LoginScreen() {
             <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
               <Sparkles size={18} className="text-accent" />
             </div>
-            <span className="text-xs text-gray-400">AI-Powered RAG</span>
+            <span className="text-xs text-gray-400">Instant Answers</span>
           </div>
           <div className="flex flex-col items-center gap-2 text-center">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
@@ -69,7 +69,7 @@ export default function LoginScreen() {
             <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
               <Zap size={18} className="text-orange-400" />
             </div>
-            <span className="text-xs text-gray-400">Vector Search</span>
+            <span className="text-xs text-gray-400">Smart Extraction</span>
           </div>
         </div>
 

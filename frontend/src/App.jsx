@@ -99,7 +99,7 @@ function App() {
     try {
       const data = await getMessages(sessionId);
       if (data.length === 0) {
-        setMessages([{ id: 'default', text: "Hello! I'm your Smart Document Agent. Create a session and upload a file to get started.", sender: "ai" }]);
+        setMessages([{ id: 'default', text: "Hello! I'm your AI Document Analyst. Upload a file to get started.", sender: "ai" }]);
       } else {
         setMessages(data);
       }
@@ -151,7 +151,11 @@ function App() {
       fetchSessionMessages(activeSessionId);
       fetchDocuments(activeSessionId);
     } catch (e) {
-      alert("Upload failed. Make sure your Python backend is running.");
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        text: "Upload failed. Please check your connection or file format and try again.",
+        sender: "ai"
+      }]);
     }
     setIsUploading(false);
   };

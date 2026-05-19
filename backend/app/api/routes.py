@@ -227,7 +227,7 @@ async def upload_document(
         ai_msg = models.Message(
             session_id=session_id,
             sender="ai",
-            text=f"📄 **{file.filename}** processed ({len(chunks)} chunks).\n\n{summary}"
+            text=f"📄 **{file.filename}** successfully uploaded and analyzed.\n\n{summary}"
         )
         db.add(ai_msg)
         db.commit()
