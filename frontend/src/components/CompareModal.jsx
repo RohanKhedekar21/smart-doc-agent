@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { X, SplitSquareHorizontal, Loader2, FileText } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { compareDocuments } from '../services/api'
 
 export default function CompareModal({ sessionId, documents, onClose, onComparisonComplete }) {
@@ -132,8 +134,10 @@ export default function CompareModal({ sessionId, documents, onClose, onComparis
           {result && result.answer && (
             <div className="animate-fade-in">
               <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-5">
-                <div className="text-gray-200 whitespace-pre-wrap text-[15px] leading-relaxed">
-                  {result.answer}
+                <div className="markdown-content text-gray-200">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {result.answer}
+                  </ReactMarkdown>
                 </div>
                 
                 {result.sources && result.sources.length > 0 && (
