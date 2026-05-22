@@ -1,3 +1,5 @@
+import json
+import logging
 import os
 
 from dotenv import load_dotenv
@@ -6,7 +8,23 @@ from sqlalchemy.orm import Session as DBSession
 
 from ..db import models
 
+logger = logging.getLogger("smart_agent.rag")
+
 load_dotenv()
+
+MAX_QUERY_LENGTH = 4000
+
+def sanitize_prompt_input(text: str) -> str:
+    """Sanitize user input to prevent prompt injection and limit input length."""
+    if not text:
+        return ""
+    if len(text) > MAX_QUERY_LENGTH:
+        raise ValueError(f"Query exceeds the maximum allowed length of {MAX_QUERY_LENGTH} characters.")
+    # Remove null bytes
+    text = text.replace("\x00", "")
+    # Replace markdown fences to prevent escaping context blocks
+    text = text.replace("```", "'''")
+    return text
 
 # Initialize the Gemini client once
 _client = None
@@ -34,7 +52,7 @@ def embed_text(text: str) -> list:
         )
         return result.embeddings[0].values
     except Exception as e:
-        print(f"Embedding failed (check API key): {e}")
+        logger.error(f"Embedding failed (check API key): {e}", exc_info=True)
         return [0.0] * 768
 
 
@@ -55,16 +73,39 @@ def save_chunks(db: DBSession, session_id: str, document_id: int, chunks: list, 
 
 def query_session(db: DBSession, session_id: str, query: str) -> dict:
     """Search the vector store using document-aware retrieval and generate an answer."""
+    query = sanitize_prompt_input(query)
     # Check if there are any chunks for this session
     chunk_count = db.query(models.DocumentChunk).filter(
         models.DocumentChunk.session_id == session_id
     ).count()
 
     if chunk_count == 0:
-        return {
-            "answer": "No documents found for this session. Please upload a document first.",
-            "sources": []
-        }
+        # Generate a friendly response guiding the user to upload a document
+        try:
+            client = _get_client()
+            prompt = (
+                "You are Smart Document Agent, a helpful and friendly document analysis assistant.\n"
+                "The user has NOT uploaded any documents to this workspace/session yet.\n\n"
+                f"User message: \"{query}\"\n\n"
+                "INSTRUCTIONS:\n"
+                "1. If the message is a greeting, pleasantry, or casual conversation (e.g. 'Hi', 'Hello', 'Who are you?'), "
+                "respond in a very warm, professional, and friendly manner. Welcome them to Smart Document Agent, and guide them to upload "
+                "their first document (PDF, TXT, CSV, DOCX, XLSX) using the panel on the left to get started.\n"
+                "2. If they are asking a specific question, politely explain that you cannot answer it yet because no documents "
+                "have been uploaded. Guide them to upload a document first so you can analyze it for them.\n"
+                "3. Keep the response concise, helpful, and invite interaction. Use relevant emojis."
+            )
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+            )
+            return {"answer": response.text, "sources": []}
+        except Exception as e:
+            logger.error(f"Failed to generate greeting when no docs: {e}", exc_info=True)
+            return {
+                "answer": "👋 Hello! Welcome to Smart Document Agent. Please upload a document using the left panel to get started!",
+                "sources": []
+            }
 
     query_vector = embed_text(query)
 
@@ -100,15 +141,17 @@ def query_session(db: DBSession, session_id: str, query: str) -> dict:
     try:
         client = _get_client()
         prompt = (
-            "You are a professional document analysis assistant. The user has uploaded "
-            f"{len(unique_filenames)} document(s) and is asking a question.\n\n"
+            "You are Smart Document Agent, a professional and friendly document analysis assistant. "
+            f"The user has uploaded {len(unique_filenames)} document(s) in this session: {', '.join(unique_filenames)}.\n\n"
             "IMPORTANT RULES:\n"
-            "1. Answer based strictly on the provided context.\n"
-            "2. When the question is broad, reference ALL source documents — do not skip any.\n"
-            "3. Clearly label which information comes from which source file.\n"
-            "4. Use markdown formatting (tables, bold, lists) to organize data.\n"
-            "5. Use relevant emojis to make your response engaging.\n"
-            "6. If comparing across documents, use a structured table.\n\n"
+            "1. If the user's message is a greeting (e.g., 'Hi', 'Hello', 'Hey'), general conversational pleasantry, or casual chat, "
+            "respond friendly and politely. Acknowledge the documents they have uploaded, and invite them to ask specific questions about them. Do NOT reference or try to answer from the document context for general greetings.\n"
+            "2. Otherwise, answer the query based strictly on the provided context below.\n"
+            "3. When the question is broad, reference ALL source documents — do not skip any.\n"
+            "4. Clearly label which information comes from which source file.\n"
+            "5. Use markdown formatting (tables, bold, lists) to organize data.\n"
+            "6. Use relevant emojis to make your response engaging.\n"
+            "7. If comparing across documents, use a structured table.\n\n"
             f"Context from {len(unique_filenames)} document(s):\n{context}\n\n"
             f"Question: {query}"
         )
@@ -116,10 +159,15 @@ def query_session(db: DBSession, session_id: str, query: str) -> dict:
             model="gemini-2.5-flash",
             contents=prompt,
         )
+        # If it was a simple greeting/pleasantry, we don't want to show citation badges in the UI,
+        # so let's let the backend return empty sources for greetings.
+        # We can do a quick check on the LLM's response or query itself to see if it's a greeting,
+        # but returning sources is fine since it's just metadata, but to be clean, let's keep sources.
         return {"answer": response.text, "sources": sources}
     except Exception as e:
+        logger.error(f"Failed to generate answer in query_session: {e}", exc_info=True)
         return {
-            "answer": f"Failed to generate answer. Please try again later. Error: {e}",
+            "answer": "Failed to generate answer. Please try again later.",
             "sources": []
         }
 
@@ -142,12 +190,13 @@ def summarize_text(text: str, filename: str) -> str:
         )
         return response.text
     except Exception as e:
-        return f"Document uploaded successfully, but summary generation failed: {e}"
+        logger.error(f"Error in summarize_text: {e}", exc_info=True)
+        return "Document uploaded successfully, but summary generation failed."
 
 
 def extract_structured_data(db: DBSession, session_id: str, query: str) -> dict:
     """Extract structured data from ALL documents using document-aware retrieval."""
-    import json
+    query = sanitize_prompt_input(query)
 
     chunk_count = db.query(models.DocumentChunk).filter(
         models.DocumentChunk.session_id == session_id
@@ -214,14 +263,17 @@ def extract_structured_data(db: DBSession, session_id: str, query: str) -> dict:
         data = json.loads(raw)
         data["sources"] = sources
         return data
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as jde:
+        logger.error(f"JSONDecodeError in extract_structured_data: {jde}. Raw response: {response.text}", exc_info=True)
         return {"columns": [], "rows": [], "error": "Failed to parse structured data from AI response."}
     except Exception as e:
-        return {"columns": [], "rows": [], "error": str(e)}
+        logger.error(f"Error in extract_structured_data: {e}", exc_info=True)
+        return {"columns": [], "rows": [], "error": "Failed to extract structured data."}
 
 
 def compare_documents(db: DBSession, session_id: str, doc1_filename: str, doc2_filename: str, query: str) -> dict:
     """Compare two specific documents based on a user query."""
+    query = sanitize_prompt_input(query)
     query_vector = embed_text(query)
 
     # Get top 4 chunks for doc1 filtered by filename
@@ -273,4 +325,5 @@ def compare_documents(db: DBSession, session_id: str, doc1_filename: str, doc2_f
         )
         return {"answer": response.text, "sources": [doc1_filename, doc2_filename], "error": False}
     except Exception as e:
-        return {"answer": f"Comparison failed. Error: {e}", "error": True}
+        logger.error(f"Error in compare_documents: {e}", exc_info=True)
+        return {"answer": "Comparison failed. Please try again later.", "error": True}

@@ -3,6 +3,11 @@ name = "smart-document-agent"
 version = "1.0.0"
 description = "A Smart Document Agent backend using FastAPI and Gemini"
 requires-python = ">=3.12"
+authors = [
+    { name = "Rohan Khedekar" }
+]
+license = { text = "Proprietary" }
+
 
 [tool.ruff]
 line-length = 88

@@ -86,7 +86,7 @@ export default function Sidebar({
       <div className="flex-1 bg-panel-bg border-r border-panel-border backdrop-blur-md flex flex-col p-6 z-10 overflow-hidden">
         <div className="flex items-center justify-between mb-8">
           <div className="text-2xl font-bold text-gradient tracking-tight whitespace-nowrap">
-            SmartAgent.
+            Smart Document Agent
           </div>
           {isMobile && (
             <button 

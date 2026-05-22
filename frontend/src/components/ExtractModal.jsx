@@ -72,6 +72,7 @@ export default function ExtractModal({ sessionId, onClose }) {
               placeholder='e.g. "Extract all skills and experience years"'
               className="flex-1 bg-white/5 border border-panel-border rounded-xl px-4 py-3 text-base md:text-sm text-white outline-none placeholder:text-gray-500 focus:border-accent/50 transition-colors"
               disabled={isLoading}
+              maxLength={4000}
             />
             <button
               type="submit"

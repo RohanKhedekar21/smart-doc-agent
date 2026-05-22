@@ -8,7 +8,6 @@ services:
       - POSTGRES_USER=smartagent
       - POSTGRES_PASSWORD=smartpassword
       - POSTGRES_DB=smartagent_db
-      - POSTGRES_HOST_AUTH_METHOD=trust
     ports:
       - "5433:5432"
     volumes:

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/v1';
+const API_URL = import.meta.env.FRONTEND_API_URL || 'http://localhost:8000/api/v1';
 
 // Create an axios instance with credentials enabled for HttpOnly cookies
 const api = axios.create({

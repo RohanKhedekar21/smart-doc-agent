@@ -103,11 +103,13 @@ async def auth_callback(request: Request, db: DBSession = Depends(get_db)):
     # Create JWT and set as HttpOnly cookie
     access_token = create_access_token(data={"sub": user.email})
     response = RedirectResponse(url=FRONTEND_URL)
+
+    is_prod = os.getenv("ENV", "development") == "production" or FRONTEND_URL.startswith("https")
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=False,  # Set True in production with HTTPS
+        secure=is_prod,  # True in production with HTTPS
         samesite="lax",
         max_age=ACCESS_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
     )

@@ -1,6 +1,6 @@
 # Smart Document Agent: Feature Highlights & Pitch Guide
 
-This document outlines the core technical innovations, premium features, and unique selling propositions (USPs) of the **Smart Document Agent**. Use these points when pitching to investors, presenting at hackathons, or writing marketing copy for the product launch.
+This document outlines the core technical innovations, premium features, and unique selling propositions (USPs) of **Smart Document Agent**. Use these points when pitching to investors, presenting at hackathons, or writing marketing copy for the product launch.
 
 ---
 
@@ -14,7 +14,7 @@ Smart Document Agent is an intelligent, multi-modal workspace that allows profes
 
 ### 1. Targeted Semantic RAG (Retrieval-Augmented Generation)
 - **The Problem:** Standard AI tools have "context window limits" and charge you based on how much text you send them. If you send a 50-page PDF, it's slow, expensive, and the AI often forgets things in the middle (the "Lost in the Middle" problem).
-- **Our Solution:** We built a custom Vector Database pipeline. When a user asks a question, the application mathematically searches for the exact 3-5 paragraphs that contain the answer across all uploaded documents. It only sends those specific paragraphs to the AI.
+- **Our Solution:** We built a PostgreSQL + pgvector database pipeline. When a user asks a question, the application mathematically searches for the exact 3-5 paragraphs that contain the answer across all uploaded documents. It only sends those specific paragraphs to the AI.
 - **The Pitch:** *"Lightning-fast answers with 90% lower API costs and zero hallucinations, capable of analyzing limitless document libraries."*
 
 ### 2. Multi-Document AI Comparison
@@ -37,24 +37,25 @@ Smart Document Agent is an intelligent, multi-modal workspace that allows profes
 
 ### 6. Premium, Consumer-Grade UI/UX
 - **The Architecture:** React 18, Tailwind CSS v4, and Lucide Icons.
-- **The Design:** We avoided the "clunky enterprise tool" look. The app features sleek glassmorphism, dynamic animations, smooth gradients, and a fully resizable sidebar.
+- **The Design:** We avoided the "clunky enterprise tool" look. The app features sleek glassmorphism, dynamic animations, smooth gradients, and a fully resizable, mobile-friendly sidebar.
 - **The Pitch:** *"Enterprise-grade AI power wrapped in a beautifully modern, consumer-grade aesthetic. It doesn't just work well; it feels premium."*
 
-### 7. Private & Persistent Workspaces
-- **The Feature:** Unlike web-based chat tools that lose data on refresh, our app is backed by a robust local SQLite/SQLAlchemy database. Chats, session names, and document references persist permanently. 
-- **The Pitch:** *"Your data stays structured. Hop between different workspaces seamlessly without losing your train of thought or your document history."*
+### 7. Private & Secure Multi-Tenant Workspaces
+- **The Feature:** Secure multi-user environment protected by Google OAuth2 (Authlib) login and HttpOnly JWT session cookies. Every database transaction and vector search query is isolated by user ID to prevent data leaks. 
+- **The Pitch:** *"Enterprise-ready security. Your chats, documents, and workspaces are completely private and accessible only to you."*
 
 ---
 
 ## 🛠️ Technology Stack (For Technical Audiences)
 - **Frontend:** React, Vite, Tailwind CSS v4, Axios.
-- **Backend:** Python, FastAPI, SQLAlchemy (SQLite ready for Postgres migration).
-- **AI/LLM:** Google Gemini 2.5 Flash (Generation) & Gemini Embedding-001 (Vectorization).
-- **Data Engineering:** Custom pure-Python cosine similarity vector store for zero-dependency local embeddings, with automatic PDF parsing (`pypdf`) and semantic chunking.
+- **Backend:** Python 3.12+, FastAPI, SQLAlchemy, SlowAPI (rate limiting).
+- **Database & Vector Store:** PostgreSQL with pgvector extension (for high-performance cosine similarity searches).
+- **AI/LLM:** Google Gemini 2.5 Flash (Generation) & Gemini Text-Embedding-004 (Vectorization).
+- **Security:** CSRF-safe HttpOnly cookies, JWT authentication, and automated prompt injection query sanitization.
 
 ---
 
 ## 💡 Pitching Tips
 *   **Demonstrate the Extraction:** Upload a complex resume or invoice. Open the Extraction Modal and ask it to pull specific numbers. Click download CSV. This is a massive "Wow" moment.
 *   **Demonstrate the Comparison:** Upload two slightly different versions of a text file. Ask the comparison tool what changed.
-*   **Highlight the Citations:** Ask a very specific question and point out the purple citation badge that proves the AI isn't hallucinating.
+*   **Highlight the Citations:** Ask a very specific question and point out the citation badge that proves the AI isn't hallucinating.

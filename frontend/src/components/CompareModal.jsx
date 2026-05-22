@@ -109,6 +109,7 @@ export default function CompareModal({ sessionId, documents, onClose, onComparis
                   placeholder='e.g. "What are the main differences in pricing?"'
                   className="flex-1 bg-white/5 border border-panel-border rounded-xl px-4 py-3 text-base md:text-sm text-white outline-none placeholder:text-gray-500 focus:border-orange-500/50 transition-colors"
                   disabled={isLoading}
+                  maxLength={4000}
                 />
                 <button
                   type="submit"

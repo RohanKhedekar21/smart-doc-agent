@@ -27,7 +27,7 @@ export default function SettingsModal({ onClose }) {
             </div>
             <p className="text-sm text-gray-400 leading-relaxed">
               Upload PDFs, TXTs, or CSVs and ask questions about their content. 
-              Powered by Google Gemini AI with a custom vector search engine.
+              Powered by AI with a high-performance search engine.
             </p>
             <p className="text-xs text-gray-500 mt-3">Version 1.0.0</p>
           </div>

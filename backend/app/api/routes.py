@@ -1,8 +1,14 @@
+import logging
+import os
 import uuid
 from typing import List
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session as DBSession
+
+limiter = Limiter(key_func=get_remote_address)
 
 from ..api.auth import get_current_user
 from ..db import models
@@ -13,11 +19,13 @@ from ..services.rag_service import (
     compare_documents,
     extract_structured_data,
     query_session,
+    sanitize_prompt_input,
     save_chunks,
     summarize_text,
 )
 
 router = APIRouter(prefix="/api/v1")
+logger = logging.getLogger("smart_agent")
 
 
 # ── Session endpoints ──────────────────────────────────────────────
@@ -166,7 +174,9 @@ ALLOWED_MIME_TYPES = {
 
 
 @router.post("/sessions/{session_id}/upload")
+@limiter.limit("5/minute")
 async def upload_document(
+    request: Request,
     session_id: str,
     file: UploadFile = File(...),
     db: DBSession = Depends(get_db),
@@ -182,7 +192,6 @@ async def upload_document(
         raise HTTPException(status_code=404, detail="Session not found")
 
     # Validate file extension
-    import os
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
@@ -197,17 +206,30 @@ async def upload_document(
             detail=f"Unsupported MIME type '{file.content_type}'.",
         )
 
-    content = await file.read()
-
-    # Validate file size
-    if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=400,
-            detail=f"File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)} MB.",
-        )
+    # Read file content in chunks to enforce size limit and prevent memory exhaustion
+    content = bytearray()
+    total_bytes = 0
+    chunk_size = 1024 * 1024  # 1 MB chunk size
+    try:
+        while True:
+            chunk = await file.read(chunk_size)
+            if not chunk:
+                break
+            total_bytes += len(chunk)
+            if total_bytes > MAX_FILE_SIZE:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)} MB.",
+                )
+            content.extend(chunk)
+    except HTTPException:
+        raise
+    except Exception as read_err:
+        logger.error(f"Error reading upload file: {read_err}", exc_info=True)
+        raise HTTPException(status_code=400, detail="Failed to read uploaded file.")
 
     try:
-        text = extract_text_from_file(content, file.filename)
+        text = extract_text_from_file(bytes(content), file.filename)
         chunks = chunk_text(text)
 
         doc = models.Document(
@@ -241,7 +263,8 @@ async def upload_document(
             "summary": summary,
         }
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"Error processing uploaded document: {e}", exc_info=True)
+        raise HTTPException(status_code=400, detail="Failed to parse and process the uploaded document.")
 
 
 # ── Chat & Messages ────────────────────────────────────────────────
@@ -278,9 +301,11 @@ def get_messages(
     ]
 
 @router.post("/sessions/{session_id}/chat")
+@limiter.limit("10/minute")
 def chat_with_session(
+    request: Request,
     session_id: str,
-    request: schemas.ChatRequest,
+    chat_request: schemas.ChatRequest,
     db: DBSession = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
@@ -293,17 +318,22 @@ def chat_with_session(
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
+    try:
+        chat_request.message = sanitize_prompt_input(chat_request.message)
+    except ValueError as val_err:
+        raise HTTPException(status_code=400, detail=str(val_err))
+
     # Save user message
     user_msg = models.Message(
         session_id=session_id,
         sender="user",
-        text=request.message
+        text=chat_request.message
     )
     db.add(user_msg)
     db.commit()
 
     # Get AI answer with source citations (now uses pgvector)
-    result = query_session(db, session_id, request.message)
+    result = query_session(db, session_id, chat_request.message)
     answer_text = result["answer"]
     sources = result["sources"]
 
@@ -329,13 +359,29 @@ def chat_with_session(
 # ── Data Extraction ────────────────────────────────────────────────
 
 @router.post("/sessions/{session_id}/extract")
+@limiter.limit("10/minute")
 def extract_data(
+    request: Request,
     session_id: str,
-    request: schemas.ChatRequest,
+    chat_request: schemas.ChatRequest,
     db: DBSession = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    result = extract_structured_data(db, session_id, request.message)
+    # Verify session belongs to user
+    session = (
+        db.query(models.Session)
+        .filter(models.Session.id == session_id, models.Session.user_id == current_user.id)
+        .first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    try:
+        chat_request.message = sanitize_prompt_input(chat_request.message)
+    except ValueError as val_err:
+        raise HTTPException(status_code=400, detail=str(val_err))
+
+    result = extract_structured_data(db, session_id, chat_request.message)
 
     if "error" in result and result["error"]:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -346,13 +392,29 @@ def extract_data(
 # ── Document Comparison ────────────────────────────────────────────
 
 @router.post("/sessions/{session_id}/compare")
+@limiter.limit("10/minute")
 def compare_docs(
+    request: Request,
     session_id: str,
-    request: schemas.CompareRequest,
+    compare_request: schemas.CompareRequest,
     db: DBSession = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    result = compare_documents(db, session_id, request.doc1_filename, request.doc2_filename, request.query)
+    # Verify session belongs to user
+    session = (
+        db.query(models.Session)
+        .filter(models.Session.id == session_id, models.Session.user_id == current_user.id)
+        .first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    try:
+        compare_request.query = sanitize_prompt_input(compare_request.query)
+    except ValueError as val_err:
+        raise HTTPException(status_code=400, detail=str(val_err))
+
+    result = compare_documents(db, session_id, compare_request.doc1_filename, compare_request.doc2_filename, compare_request.query)
 
     if result.get("error"):
         raise HTTPException(status_code=400, detail=result.get("answer"))
@@ -361,7 +423,7 @@ def compare_docs(
     ai_msg = models.Message(
         session_id=session_id,
         sender="ai",
-        text=f"⚖️ **Comparison Report:** {request.doc1_filename} vs {request.doc2_filename}\n\n{result['answer']}"
+        text=f"⚖️ **Comparison Report:** {compare_request.doc1_filename} vs {compare_request.doc2_filename}\n\n{result['answer']}"
     )
     db.add(ai_msg)
     db.commit()

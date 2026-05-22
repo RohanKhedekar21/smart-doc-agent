@@ -1,6 +1,6 @@
 # User Guide: Smart Document Agent
 
-Welcome to the Smart Document Agent! This application is designed to help you analyze, query, and extract insights from your documents (PDFs, TXT, CSVs) using advanced AI.
+Welcome to Smart Document Agent! This application is designed to help you analyze, query, and extract insights from your documents (PDFs, TXT, CSVs) using advanced AI.
 
 ---
 

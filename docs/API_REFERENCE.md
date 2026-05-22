@@ -162,3 +162,43 @@ Performs a side-by-side AI comparison of two specific documents based on a user 
     "error": false
   }
   ```
+
+---
+
+## Health Check & Authentication
+
+### `GET /health`
+Returns the operational status of the API. Useful for container health checks.
+- **Response:** `200 OK`
+  ```json
+  {
+    "status": "healthy",
+    "version": "1.0.0",
+    "service": "Smart Document Agent API"
+  }
+  ```
+
+### `GET /api/v1/auth/login`
+Redirects the user to Google's OAuth consent screen for logging in.
+- **Response:** `307 Temporary Redirect` (redirects to Google Login)
+
+### `GET /api/v1/auth/callback`
+OAuth callback handler. Google redirects back to this endpoint with authorization code.
+Upon validation, redirects user back to front-end home with access token cookie set.
+- **Response:** `307 Temporary Redirect`
+
+### `GET /api/v1/auth/me`
+Retrieves the profile of the currently logged-in user.
+- **Response:** `200 OK`
+  ```json
+  {
+    "id": 1,
+    "email": "user@example.com",
+    "name": "John Doe",
+    "picture": "https://lh3.googleusercontent.com/..."
+  }
+  ```
+
+### `POST /api/v1/auth/logout`
+Logs the user out by deleting their HttpOnly `access_token` session cookie.
+- **Response:** `200 OK` `{"detail": "Logged out"}`

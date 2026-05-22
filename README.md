@@ -1,16 +1,16 @@
 # Smart Document Agent
 
-A full-stack AI-powered document analysis and Q&A application. Upload PDFs, TXTs, or CSVs and ask questions about their content using Google's Gemini AI.
+A full-stack AI-powered document analysis and Q&A workspace. Upload PDFs, TXTs, CSVs, DOCXs, or XLSXs and ask questions about their content using Google's Gemini AI.
 
 ## Tech Stack
 
 | Layer     | Technology                     |
 | --------- | ------------------------------ |
 | Frontend  | React 18, Vite, Tailwind CSS 4 |
-| Backend   | Python 3.14, FastAPI, SQLAlchemy |
+| Backend   | Python 3.12+, FastAPI, SQLAlchemy |
 | AI Engine | Google Gemini (google-genai SDK) |
-| Database  | SQLite (sessions & metadata)   |
-| Vector DB | Custom pure-Python cosine search |
+| Database  | PostgreSQL                     |
+| Vector DB | PostgreSQL (pgvector extension) |
 
 ## Project Structure
 
@@ -99,7 +99,7 @@ npm run dev
 
 ## Documentation
 
-For an in-depth look at how the Smart Document Agent works, please refer to our comprehensive documentation suite:
+For an in-depth look at how Smart Document Agent works, please refer to our comprehensive documentation suite:
 
 - 🏗️ **[Architecture & Design](docs/ARCHITECTURE.md):** Tech stack, database schema, and how the Targeted Semantic Retrieval (RAG) pipeline is built.
 - 📖 **[API Reference](docs/API_REFERENCE.md):** Detailed endpoints, request/response schemas for the FastAPI backend.
@@ -110,4 +110,4 @@ Alternatively, once the backend is running, you can visit **http://127.0.0.1:800
 
 ## License
 
-MIT
+Proprietary. Copyright (c) 2026 Rohan Khedekar. All rights reserved.

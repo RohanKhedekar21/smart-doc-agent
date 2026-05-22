@@ -116,6 +116,7 @@ export default function ChatArea({ messages, onSendMessage, isLoading }) {
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             disabled={isLoading}
+            maxLength={4000}
           />
           <button 
             type="submit" 
@@ -126,7 +127,7 @@ export default function ChatArea({ messages, onSendMessage, isLoading }) {
           </button>
         </form>
         <div className="text-center mt-3 text-xs text-gray-400">
-          SmartAgent can make mistakes. Verify important information with the original documents.
+          Smart Document Agent can make mistakes. Verify important information with the original documents.
         </div>
       </div>
     </>
