@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FileText, PanelRightOpen, Table, SplitSquareHorizontal, LogOut, Bot } from 'lucide-react'
+import { FileText, PanelRightOpen, Table, SplitSquareHorizontal, LogOut, Bot, Menu } from 'lucide-react'
 import Sidebar from './components/Sidebar'
 import ChatArea from './components/ChatArea'
 import UploadZone from './components/UploadZone'
@@ -28,6 +28,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showExtract, setShowExtract] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Check authentication on mount
   useEffect(() => {
@@ -233,86 +234,120 @@ function App() {
 
   return (
     <div className="flex h-screen w-screen bg-bg-color text-gray-100 font-sans overflow-hidden">
+      {/* Mobile Sidebar Backdrop */}
+      {isSidebarOpen && (
+        <div 
+          onClick={() => setIsSidebarOpen(false)} 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden animate-fade-in"
+        />
+      )}
+
+      {/* Mobile Document Panel Backdrop */}
+      {showDocPanel && (
+        <div 
+          onClick={() => setShowDocPanel(false)} 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden animate-fade-in"
+        />
+      )}
+
       <Sidebar 
         sessions={sessions} 
         activeSession={activeSessionId} 
-        onSelectSession={setActiveSessionId} 
-        onCreateSession={handleCreateSession}
+        onSelectSession={(id) => { setActiveSessionId(id); setIsSidebarOpen(false); }} 
+        onCreateSession={() => { handleCreateSession(); setIsSidebarOpen(false); }}
         onRenameSession={handleRenameSession}
         onDeleteSession={handleDeleteSession}
-        onOpenSettings={() => setShowSettings(true)}
+        onOpenSettings={() => { setShowSettings(true); setIsSidebarOpen(false); }}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        activeSessionObj={activeSession}
+        documentsCount={documents.length}
+        onOpenExtract={() => { setShowExtract(true); setIsSidebarOpen(false); }}
+        onOpenCompare={() => { setShowCompare(true); setIsSidebarOpen(false); }}
+        onOpenDocPanel={() => { setShowDocPanel(true); setIsSidebarOpen(false); }}
       />
 
-      <div className="flex-1 flex flex-col relative">
+      <div className="flex-1 flex flex-col relative min-w-0">
         {/* Top bar */}
-        <div className="h-16 flex items-center justify-between px-10 border-b border-panel-border bg-bg-color/60 backdrop-blur-md z-10">
-          <div>
-            <h2 className="text-lg font-semibold">
-              {activeSession ? activeSession.name : "Welcome to Smart Agent"}
-            </h2>
-            <div className="text-[13px] text-gray-400 flex items-center gap-1.5 mt-0.5">
-              {activeSession ? (
-                <>
-                  <FileText size={14} />
-                  {documents.length > 0 ? `${documents.length} document${documents.length > 1 ? 's' : ''} uploaded` : 'No documents yet'}
-                </>
-              ) : (
-                "Get started by selecting or creating a session"
-              )}
+        <div className="h-16 flex items-center justify-between px-4 md:px-10 border-b border-panel-border bg-bg-color/60 backdrop-blur-md z-10 gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="md:hidden p-2 rounded-xl border border-panel-border bg-white/5 text-gray-400 hover:text-white shrink-0 cursor-pointer"
+              title="Open sidebar"
+            >
+              <Menu size={18} />
+            </button>
+            <div className="truncate">
+              <h2 className="text-base md:text-lg font-semibold truncate">
+                {activeSession ? activeSession.name : "Welcome to Smart Agent"}
+              </h2>
+              <div className="text-[11px] md:text-[13px] text-gray-400 flex items-center gap-1.5 mt-0.5 truncate">
+                {activeSession ? (
+                  <>
+                    <FileText size={14} className="shrink-0" />
+                    <span className="truncate">
+                      {documents.length > 0 ? `${documents.length} document${documents.length > 1 ? 's' : ''}` : 'No documents'}
+                    </span>
+                  </>
+                ) : (
+                  "Get started by selecting or creating a session"
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
             {activeSession && (
               <>
                 <UploadZone onUpload={handleUpload} isUploading={isUploading} uploadProgress={uploadProgress} />
                 <button 
                   onClick={() => setShowExtract(true)}
-                  className="p-2.5 rounded-xl border transition-all duration-200 bg-white/5 border-panel-border text-gray-400 hover:text-white hover:border-white/20"
+                  className="hidden md:inline-flex p-2 md:p-2.5 rounded-xl border transition-all duration-200 bg-white/5 border-panel-border text-gray-400 hover:text-white hover:border-white/20 cursor-pointer"
                   title="Extract structured data"
                 >
-                  <Table size={18} />
+                  <Table className="w-4 h-4 md:w-[18px] md:h-[18px]" />
                 </button>
                 <button 
                   onClick={() => setShowCompare(true)}
-                  className="p-2.5 rounded-xl border transition-all duration-200 bg-white/5 border-panel-border text-gray-400 hover:text-orange-400 hover:border-orange-500/30"
+                  className="hidden md:inline-flex p-2 md:p-2.5 rounded-xl border transition-all duration-200 bg-white/5 border-panel-border text-gray-400 hover:text-orange-400 hover:border-orange-500/30 cursor-pointer"
                   title="Compare Documents"
                 >
-                  <SplitSquareHorizontal size={18} />
+                  <SplitSquareHorizontal className="w-4 h-4 md:w-[18px] md:h-[18px]" />
                 </button>
                 <button 
                   onClick={() => setShowDocPanel(!showDocPanel)}
-                  className={`p-2.5 rounded-xl border transition-all duration-200 ${
+                  className={`hidden md:inline-flex p-2 md:p-2.5 rounded-xl border transition-all duration-200 cursor-pointer ${
                     showDocPanel 
                       ? 'bg-accent/10 border-accent/30 text-accent' 
                       : 'bg-white/5 border-panel-border text-gray-400 hover:text-white hover:border-white/20'
                   }`}
                   title="Toggle document panel"
                 >
-                  <PanelRightOpen size={18} />
+                  <PanelRightOpen className="w-4 h-4 md:w-[18px] md:h-[18px]" />
                 </button>
               </>
             )}
 
             {/* User profile & logout */}
-            <div className={`flex items-center gap-2 ml-2 pl-3 ${activeSession ? 'border-l border-panel-border' : ''}`}>
+            <div className={`flex items-center gap-1.5 md:gap-2 ml-1 md:ml-2 pl-2 md:pl-3 ${activeSession ? 'border-l border-panel-border' : ''} shrink-0`}>
               {user.picture ? (
                 <img
                   src={user.picture}
                   alt={user.name}
-                  className="w-8 h-8 rounded-full border border-panel-border"
+                  className="w-7 h-7 md:w-8 md:h-8 rounded-full border border-panel-border"
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-sm font-semibold text-accent">
+                <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-accent/20 flex items-center justify-center text-xs md:text-sm font-semibold text-accent">
                   {user.name?.[0] || '?'}
                 </div>
               )}
               <button
                 onClick={handleLogout}
-                className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+                className="p-1.5 md:p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 cursor-pointer"
                 title="Logout"
               >
-                <LogOut size={16} />
+                <LogOut className="w-4 h-4 md:w-[16px] md:h-[16px]" />
               </button>
             </div>
           </div>

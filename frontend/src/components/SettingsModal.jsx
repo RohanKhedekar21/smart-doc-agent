@@ -5,9 +5,9 @@ export default function SettingsModal({ onClose }) {
   const [apiKey, setApiKey] = useState("");
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="glass-panel w-[480px] max-h-[80vh] overflow-y-auto p-8"
+        className="glass-panel w-[92%] max-w-[480px] max-h-[85vh] overflow-y-auto p-6 md:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-8">
@@ -52,10 +52,12 @@ export default function SettingsModal({ onClose }) {
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-widest text-gray-400 mb-4">Supported Formats</h3>
           <div className="glass-panel p-4">
-            <div className="flex gap-3">
-              <span className="px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-lg text-sm text-accent">.pdf</span>
-              <span className="px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-lg text-sm text-accent">.txt</span>
-              <span className="px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-lg text-sm text-accent">.csv</span>
+            <div className="flex flex-wrap gap-2">
+              <span className="px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-lg text-xs md:text-sm font-medium text-accent">.pdf</span>
+              <span className="px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-lg text-xs md:text-sm font-medium text-accent">.docx</span>
+              <span className="px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-lg text-xs md:text-sm font-medium text-accent">.xlsx</span>
+              <span className="px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-lg text-xs md:text-sm font-medium text-accent">.txt</span>
+              <span className="px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-lg text-xs md:text-sm font-medium text-accent">.csv</span>
             </div>
           </div>
         </div>

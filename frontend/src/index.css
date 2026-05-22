@@ -33,6 +33,10 @@
   animation: fadeIn 0.4s ease-out forwards;
 }
 
+@utility animate-slide-in-right {
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 @layer base {
   body {
     font-family: 'Outfit', sans-serif;
@@ -63,6 +67,11 @@
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 
 @utility markdown-content {

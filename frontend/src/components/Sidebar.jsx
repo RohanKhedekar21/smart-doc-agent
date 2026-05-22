@@ -1,14 +1,26 @@
-import { Plus, Bot, Settings, Pencil, Trash2, Check, X, GripVertical } from 'lucide-react'
+import { Plus, Bot, Settings, Pencil, Trash2, Check, X, GripVertical, Table, SplitSquareHorizontal, FileText } from 'lucide-react'
 import { useState, useCallback, useEffect } from 'react'
 
 export default function Sidebar({ 
   sessions, activeSession, onSelectSession, onCreateSession,
-  onRenameSession, onDeleteSession, onOpenSettings 
+  onRenameSession, onDeleteSession, onOpenSettings,
+  isOpen, onClose,
+  activeSessionObj, documentsCount, onOpenExtract, onOpenCompare, onOpenDocPanel
 }) {
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
   const [width, setWidth] = useState(280);
   const [isDragging, setIsDragging] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const MIN_WIDTH = 200;
   const MAX_WIDTH = 450;
@@ -63,10 +75,28 @@ export default function Sidebar({
   };
 
   return (
-    <div className="relative flex shrink-0" style={{ width: `${width}px` }}>
+    <div 
+      className={`fixed inset-y-0 left-0 z-40 flex shrink-0 transition-transform duration-300 md:static md:translate-x-0 ${
+        isMobile 
+          ? `w-[280px] max-w-[85vw] ${isOpen ? 'translate-x-0' : '-translate-x-full'}` 
+          : 'relative'
+      }`}
+      style={isMobile ? undefined : { width: `${width}px` }}
+    >
       <div className="flex-1 bg-panel-bg border-r border-panel-border backdrop-blur-md flex flex-col p-6 z-10 overflow-hidden">
-        <div className="text-2xl font-bold text-gradient mb-8 tracking-tight whitespace-nowrap">
-          SmartAgent.
+        <div className="flex items-center justify-between mb-8">
+          <div className="text-2xl font-bold text-gradient tracking-tight whitespace-nowrap">
+            SmartAgent.
+          </div>
+          {isMobile && (
+            <button 
+              onClick={onClose}
+              className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              title="Close sidebar"
+            >
+              <X size={20} />
+            </button>
+          )}
         </div>
         
         <button 
@@ -77,10 +107,46 @@ export default function Sidebar({
           New Chat
         </button>
 
-        <div className="mt-10 flex-1 overflow-y-auto">
-          <h3 className="text-xs uppercase text-gray-400 mb-4 tracking-widest">
-            Recent Sessions
-          </h3>
+        <div className="mt-10 flex-1 overflow-y-auto space-y-8">
+          {activeSessionObj && (
+            <div>
+              <h3 className="text-xs uppercase text-gray-400 mb-3 tracking-widest">
+                Session Tools
+              </h3>
+              <div className="space-y-2">
+                <button 
+                  onClick={onOpenExtract}
+                  className="w-full glass-panel p-2.5 px-4 flex items-center gap-3 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  <Table size={16} className="text-accent shrink-0" />
+                  <span>Extract Data</span>
+                </button>
+                
+                <button 
+                  onClick={onOpenCompare}
+                  className="w-full glass-panel p-2.5 px-4 flex items-center gap-3 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  <SplitSquareHorizontal size={16} className="text-orange-400 shrink-0" />
+                  <span>Compare Documents</span>
+                </button>
+                
+                <button 
+                  onClick={onOpenDocPanel}
+                  className="w-full glass-panel p-2.5 px-4 flex items-center gap-3 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  <FileText size={16} className="text-emerald-400 shrink-0" />
+                  <span className="truncate">
+                    View Documents {documentsCount > 0 ? `(${documentsCount})` : ''}
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <h3 className="text-xs uppercase text-gray-400 mb-4 tracking-widest">
+              Recent Sessions
+            </h3>
           
           {sessions.map(s => (
             <div 
@@ -125,6 +191,7 @@ export default function Sidebar({
               )}
             </div>
           ))}
+          </div>
         </div>
 
         <div 
@@ -137,14 +204,16 @@ export default function Sidebar({
       </div>
 
       {/* Resize handle */}
-      <div 
-        onMouseDown={handleMouseDown}
-        className={`absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize z-20 group flex items-center justify-center transition-colors ${
-          isDragging ? 'bg-accent/40' : 'hover:bg-accent/20'
-        }`}
-      >
-        <div className={`w-0.5 h-8 rounded-full transition-colors ${isDragging ? 'bg-accent' : 'bg-transparent group-hover:bg-accent/50'}`} />
-      </div>
+      {!isMobile && (
+        <div 
+          onMouseDown={handleMouseDown}
+          className={`absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize z-20 group flex items-center justify-center transition-colors ${
+            isDragging ? 'bg-accent/40' : 'hover:bg-accent/20'
+          }`}
+        >
+          <div className={`w-0.5 h-8 rounded-full transition-colors ${isDragging ? 'bg-accent' : 'bg-transparent group-hover:bg-accent/50'}`} />
+        </div>
+      )}
     </div>
   )
 }

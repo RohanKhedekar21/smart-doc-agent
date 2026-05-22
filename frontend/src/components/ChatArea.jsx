@@ -21,7 +21,7 @@ export default function ChatArea({ messages, onSendMessage, isLoading }) {
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto p-10 flex flex-col gap-6 scroll-smooth">
+      <div className="flex-1 overflow-y-auto p-4 md:p-10 flex flex-col gap-4 md:gap-6 scroll-smooth">
         {messages.map((msg) => {
           const isDocSummary = msg.sender === 'ai' && msg.text.startsWith('📄');
           const hasSources = msg.sources && msg.sources.length > 0;
@@ -44,7 +44,7 @@ export default function ChatArea({ messages, onSendMessage, isLoading }) {
           return (
             <div 
               key={msg.id} 
-              className={`max-w-[80%] p-4 rounded-2xl leading-relaxed text-[15px] animate-fade-in border ${
+              className={`max-w-[90%] md:max-w-[80%] p-3.5 md:p-4 rounded-2xl leading-relaxed text-[14px] md:text-[15px] animate-fade-in border ${
                 isDocSummary
                   ? 'self-start bg-emerald-500/10 border-emerald-500/30 rounded-bl-sm border-l-4 border-l-emerald-400'
                   : msg.sender === 'user' 
@@ -92,7 +92,7 @@ export default function ChatArea({ messages, onSendMessage, isLoading }) {
         })}
 
         {isLoading && (
-          <div className="self-start bg-msg-ai border border-panel-border rounded-2xl rounded-bl-sm p-4 max-w-[80%] animate-pulse">
+          <div className="self-start bg-msg-ai border border-panel-border rounded-2xl rounded-bl-sm p-3.5 md:p-4 max-w-[90%] md:max-w-[80%] animate-pulse">
             <div className="flex gap-1.5">
               <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></span>
               <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></span>
@@ -104,14 +104,14 @@ export default function ChatArea({ messages, onSendMessage, isLoading }) {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-6 px-10 bg-bg-color/80 backdrop-blur-md border-t border-panel-border">
+      <div className="p-4 md:p-6 md:px-10 bg-bg-color/80 backdrop-blur-md border-t border-panel-border">
         <form 
-          className="flex items-center bg-panel-bg border border-panel-border rounded-2xl p-2 px-4 transition-all duration-300 focus-within:border-accent/50 focus-within:ring-4 focus-within:ring-accent/10" 
+          className="flex items-center bg-panel-bg border border-panel-border rounded-2xl p-1.5 px-3 md:p-2 md:px-4 transition-all duration-300 focus-within:border-accent/50 focus-within:ring-4 focus-within:ring-accent/10" 
           onSubmit={handleSubmit}
         >
           <input 
             type="text" 
-            className="flex-1 bg-transparent border-none text-gray-100 font-inherit text-[15px] p-3 outline-none placeholder:text-gray-500" 
+            className="flex-1 bg-transparent border-none text-gray-100 font-inherit text-base md:text-[15px] p-2.5 md:p-3 outline-none placeholder:text-gray-500" 
             placeholder="Ask anything about your documents..." 
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}

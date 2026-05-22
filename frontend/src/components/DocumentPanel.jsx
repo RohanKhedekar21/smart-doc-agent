@@ -2,7 +2,7 @@ import { FileText, Trash2, X } from 'lucide-react'
 
 export default function DocumentPanel({ documents, onDelete, onClose }) {
   return (
-    <div className="w-[300px] bg-panel-bg border-l border-panel-border backdrop-blur-md flex flex-col z-10">
+    <div className="fixed inset-y-0 right-0 z-40 w-[280px] max-w-[85vw] bg-panel-bg border-l border-panel-border backdrop-blur-md flex flex-col animate-slide-in-right md:static md:w-[300px] md:max-w-none md:animate-none">
       <div className="flex items-center justify-between p-5 border-b border-panel-border">
         <h3 className="text-sm font-semibold uppercase tracking-widest text-gray-300">
           Documents

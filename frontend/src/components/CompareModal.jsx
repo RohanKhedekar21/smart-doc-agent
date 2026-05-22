@@ -39,29 +39,29 @@ export default function CompareModal({ sessionId, documents, onClose, onComparis
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div 
-        className="bg-panel-bg border border-panel-border rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl"
+        className="bg-panel-bg border border-panel-border rounded-2xl w-[95%] max-w-4xl max-h-[85vh] flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-panel-border">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-panel-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center border border-orange-500/30">
+            <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center border border-orange-500/30 shrink-0">
               <SplitSquareHorizontal size={20} className="text-orange-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Compare Documents</h2>
-              <p className="text-xs text-gray-400">Select two documents and ask the AI to analyze the differences.</p>
+              <h2 className="text-sm md:text-lg font-semibold text-white">Compare Documents</h2>
+              <p className="text-[11px] md:text-xs text-gray-400">Select two documents and analyze differences</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white p-1 transition-colors">
+          <button onClick={onClose} className="text-gray-400 hover:text-white p-1 transition-colors cursor-pointer">
             <X size={20} />
           </button>
         </div>
 
         {/* Input Area */}
-        <div className="p-6 border-b border-panel-border bg-white/[0.02]">
+        <div className="p-4 md:p-6 border-b border-panel-border bg-white/[0.02]">
           {documents.length < 2 ? (
             <div className="text-amber-400 text-sm flex items-center gap-2">
               <FileText size={16} />
@@ -69,7 +69,7 @@ export default function CompareModal({ sessionId, documents, onClose, onComparis
             </div>
           ) : (
             <form onSubmit={handleCompare} className="flex flex-col gap-4">
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
                 <div className="flex-1 flex flex-col gap-1.5">
                   <label className="text-xs text-gray-400 font-medium ml-1">Document A</label>
                   <select 
@@ -83,7 +83,7 @@ export default function CompareModal({ sessionId, documents, onClose, onComparis
                   </select>
                 </div>
                 
-                <div className="flex items-center justify-center pt-6">
+                <div className="flex items-center justify-center pt-1 sm:pt-6">
                   <div className="text-gray-500 font-bold px-2 text-xs">VS</div>
                 </div>
 
@@ -101,19 +101,19 @@ export default function CompareModal({ sessionId, documents, onClose, onComparis
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder='e.g. "What are the main differences in pricing?" or "Compare the responsibilities mentioned."'
-                  className="flex-1 bg-white/5 border border-panel-border rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-gray-500 focus:border-orange-500/50 transition-colors"
+                  placeholder='e.g. "What are the main differences in pricing?"'
+                  className="flex-1 bg-white/5 border border-panel-border rounded-xl px-4 py-3 text-base md:text-sm text-white outline-none placeholder:text-gray-500 focus:border-orange-500/50 transition-colors"
                   disabled={isLoading}
                 />
                 <button
                   type="submit"
                   disabled={isLoading || !query.trim() || doc1 === doc2}
-                  className="bg-orange-500 hover:bg-orange-600 text-white border-none rounded-xl px-6 py-3 text-sm font-semibold cursor-pointer flex items-center gap-2 transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  className="bg-orange-500 hover:bg-orange-600 text-white border-none rounded-xl px-6 py-3 text-sm font-semibold cursor-pointer flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                 >
                   {isLoading ? <Loader2 size={16} className="animate-spin" /> : <SplitSquareHorizontal size={16} />}
                   {isLoading ? "Analyzing..." : "Compare"}
@@ -124,7 +124,7 @@ export default function CompareModal({ sessionId, documents, onClose, onComparis
         </div>
 
         {/* Results Area */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-4 md:p-6">
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm">
               {error}

@@ -22,23 +22,33 @@ export default function UploadZone({ onUpload, isUploading, uploadProgress }) {
     ? `Uploading ${uploadProgress.current}/${uploadProgress.total}...` 
     : 'Processing...';
 
+  const progressTextMobile = uploadProgress 
+    ? `${uploadProgress.current}/${uploadProgress.total}` 
+    : '...';
+
   return (
     <div 
-      className={`flex items-center gap-4 px-5 py-4 border border-dashed rounded-xl transition-all duration-300 cursor-pointer ${
+      className={`flex items-center justify-center gap-1 border border-dashed rounded-xl transition-all duration-300 cursor-pointer shrink-0 ${
         isUploading 
-          ? 'border-accent/50 bg-accent/10 animate-pulse' 
-          : 'border-accent/30 bg-accent/5 hover:border-accent hover:bg-accent/10'
+          ? 'border-accent/50 bg-accent/10 animate-pulse px-2 py-1.5' 
+          : 'border-accent/30 bg-accent/5 hover:border-accent hover:bg-accent/10 p-2 md:px-4 md:py-2.5'
       }`}
       onClick={() => !isUploading && inputRef.current?.click()}
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
-      <UploadCloud size={22} className="text-accent shrink-0 opacity-80" />
-      <div className="flex-1">
-        <span className="text-sm font-medium">
+      <UploadCloud className="text-accent shrink-0 opacity-80 w-4 h-4 md:w-[18px] md:h-[18px]" />
+      
+      {isUploading && (
+        <span className="text-[10px] font-semibold text-accent md:hidden">
+          {progressTextMobile}
+        </span>
+      )}
+
+      <div className="hidden md:block min-w-0">
+        <span className="text-xs md:text-sm font-medium truncate block">
           {isUploading ? progressText : 'Upload Documents'}
         </span>
-        <span className="text-xs text-gray-400 ml-2">PDF, DOCX, XLSX, TXT, CSV</span>
       </div>
       <input 
         ref={inputRef}

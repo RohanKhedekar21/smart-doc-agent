@@ -41,42 +41,42 @@ export default function ExtractModal({ sessionId, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div 
-        className="bg-panel-bg border border-panel-border rounded-2xl w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl"
+        className="bg-panel-bg border border-panel-border rounded-2xl w-[95%] max-w-3xl max-h-[85vh] flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-panel-border">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-panel-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl accent-gradient-bg flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl accent-gradient-bg flex items-center justify-center shrink-0">
               <Table size={20} className="text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Extract Data</h2>
-              <p className="text-xs text-gray-400">Pull structured information from your documents</p>
+              <h2 className="text-sm md:text-lg font-semibold text-white">Extract Data</h2>
+              <p className="text-[11px] md:text-xs text-gray-400">Pull structured information from your documents</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white p-1 transition-colors">
+          <button onClick={onClose} className="text-gray-400 hover:text-white p-1 transition-colors cursor-pointer">
             <X size={20} />
           </button>
         </div>
 
         {/* Query Input */}
-        <div className="p-6 border-b border-panel-border">
-          <form onSubmit={handleExtract} className="flex gap-3">
+        <div className="p-4 md:p-6 border-b border-panel-border">
+          <form onSubmit={handleExtract} className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder='e.g. "Extract all skills and experience years" or "List all company names and roles"'
-              className="flex-1 bg-white/5 border border-panel-border rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-gray-500 focus:border-accent/50 transition-colors"
+              placeholder='e.g. "Extract all skills and experience years"'
+              className="flex-1 bg-white/5 border border-panel-border rounded-xl px-4 py-3 text-base md:text-sm text-white outline-none placeholder:text-gray-500 focus:border-accent/50 transition-colors"
               disabled={isLoading}
             />
             <button
               type="submit"
               disabled={isLoading || !query.trim()}
-              className="accent-gradient-bg text-white border-none rounded-xl px-6 py-3 text-sm font-semibold cursor-pointer flex items-center gap-2 transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="accent-gradient-bg text-white border-none rounded-xl px-6 py-3 text-sm font-semibold cursor-pointer flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
               {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Table size={16} />}
               {isLoading ? "Extracting..." : "Extract"}
@@ -85,7 +85,7 @@ export default function ExtractModal({ sessionId, onClose }) {
         </div>
 
         {/* Results Area */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-4 md:p-6">
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm">
               {error}
