@@ -235,7 +235,7 @@ async def upload_document(
         doc = models.Document(
             session_id=session_id,
             filename=file.filename,
-            extracted_text=text[:500] + "...",
+            extracted_text=text,
         )
         db.add(doc)
         db.commit()
