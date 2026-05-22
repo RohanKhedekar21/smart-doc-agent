@@ -54,7 +54,7 @@ def save_chunks(db: DBSession, session_id: str, document_id: int, chunks: list, 
 
 
 def query_session(db: DBSession, session_id: str, query: str) -> dict:
-    """Search the vector store and generate an answer with source citations."""
+    """Search the vector store using document-aware retrieval and generate an answer."""
     # Check if there are any chunks for this session
     chunk_count = db.query(models.DocumentChunk).filter(
         models.DocumentChunk.session_id == session_id
@@ -68,28 +68,48 @@ def query_session(db: DBSession, session_id: str, query: str) -> dict:
 
     query_vector = embed_text(query)
 
-    # Use pgvector cosine distance to find top 15 most relevant chunks to enable cross-document comparisons
-    results = (
-        db.query(models.DocumentChunk)
+    # --- Document-Aware Retrieval ---
+    # Get all unique filenames in this session
+    unique_files = (
+        db.query(models.DocumentChunk.filename)
         .filter(models.DocumentChunk.session_id == session_id)
-        .order_by(models.DocumentChunk.embedding.cosine_distance(query_vector))
-        .limit(15)
+        .distinct()
         .all()
     )
+    unique_filenames = [f[0] for f in unique_files]
 
-    # Collect unique source filenames in relevance order
-    sources = list(dict.fromkeys([r.filename for r in results]))
-    context = "\n\n".join([f"[Source: {r.filename}]\n{r.text}" for r in results])
+    # For each document, retrieve the top 3 most relevant chunks
+    all_results = []
+    for fname in unique_filenames:
+        per_doc_results = (
+            db.query(models.DocumentChunk)
+            .filter(
+                models.DocumentChunk.session_id == session_id,
+                models.DocumentChunk.filename == fname,
+            )
+            .order_by(models.DocumentChunk.embedding.cosine_distance(query_vector))
+            .limit(3)
+            .all()
+        )
+        all_results.extend(per_doc_results)
+
+    # Collect unique source filenames
+    sources = list(dict.fromkeys([r.filename for r in all_results]))
+    context = "\n\n".join([f"[Source: {r.filename}]\n{r.text}" for r in all_results])
 
     try:
         client = _get_client()
         prompt = (
-            "You are a document analysis assistant. Answer the user's question "
-            "based strictly on the provided context. When referencing specific "
-            "information, mention which source document it came from. "
-            "Use markdown formatting (like tables, bold text, lists) where appropriate to organize data, "
-            "and include relevant emojis to make your response engaging.\n\n"
-            f"Context:\n{context}\n\n"
+            "You are a professional document analysis assistant. The user has uploaded "
+            f"{len(unique_filenames)} document(s) and is asking a question.\n\n"
+            "IMPORTANT RULES:\n"
+            "1. Answer based strictly on the provided context.\n"
+            "2. When the question is broad, reference ALL source documents — do not skip any.\n"
+            "3. Clearly label which information comes from which source file.\n"
+            "4. Use markdown formatting (tables, bold, lists) to organize data.\n"
+            "5. Use relevant emojis to make your response engaging.\n"
+            "6. If comparing across documents, use a structured table.\n\n"
+            f"Context from {len(unique_filenames)} document(s):\n{context}\n\n"
             f"Question: {query}"
         )
         response = client.models.generate_content(
@@ -99,7 +119,7 @@ def query_session(db: DBSession, session_id: str, query: str) -> dict:
         return {"answer": response.text, "sources": sources}
     except Exception as e:
         return {
-            "answer": f"Failed to generate answer. Ensure GEMINI_API_KEY is set. Error: {e}",
+            "answer": f"Failed to generate answer. Please try again later. Error: {e}",
             "sources": []
         }
 
@@ -126,7 +146,7 @@ def summarize_text(text: str, filename: str) -> str:
 
 
 def extract_structured_data(db: DBSession, session_id: str, query: str) -> dict:
-    """Extract structured data from documents using Gemini and return as JSON table."""
+    """Extract structured data from ALL documents using document-aware retrieval."""
     import json
 
     chunk_count = db.query(models.DocumentChunk).filter(
@@ -136,28 +156,46 @@ def extract_structured_data(db: DBSession, session_id: str, query: str) -> dict:
     if chunk_count == 0:
         return {"columns": [], "rows": [], "error": "No documents found for this session."}
 
-    # Semantic Retrieval: Find the top 5 chunks most relevant to the extraction query
     query_vector = embed_text(query)
 
-    results = (
-        db.query(models.DocumentChunk)
+    # --- Document-Aware Retrieval ---
+    unique_files = (
+        db.query(models.DocumentChunk.filename)
         .filter(models.DocumentChunk.session_id == session_id)
-        .order_by(models.DocumentChunk.embedding.cosine_distance(query_vector))
-        .limit(5)
+        .distinct()
         .all()
     )
+    unique_filenames = [f[0] for f in unique_files]
 
-    all_text = "\n\n".join([f"[Source: {r.filename}]\n{r.text}" for r in results])
-    sources = list(dict.fromkeys([r.filename for r in results]))
+    # For each document, retrieve the top 3 most relevant chunks
+    all_results = []
+    for fname in unique_filenames:
+        per_doc_results = (
+            db.query(models.DocumentChunk)
+            .filter(
+                models.DocumentChunk.session_id == session_id,
+                models.DocumentChunk.filename == fname,
+            )
+            .order_by(models.DocumentChunk.embedding.cosine_distance(query_vector))
+            .limit(3)
+            .all()
+        )
+        all_results.extend(per_doc_results)
+
+    all_text = "\n\n".join([f"[Source: {r.filename}]\n{r.text}" for r in all_results])
+    sources = list(dict.fromkeys([r.filename for r in all_results]))
 
     try:
         client = _get_client()
         prompt = (
             "You are a data extraction assistant. Extract structured data from the "
-            "following document text based on the user's request.\n\n"
-            "IMPORTANT: Respond ONLY with valid JSON in this exact format:\n"
+            f"following {len(unique_filenames)} document(s) based on the user's request.\n\n"
+            "IMPORTANT RULES:\n"
+            "1. Respond ONLY with valid JSON in this exact format:\n"
             '{"columns": ["Column1", "Column2"], "rows": [["value1", "value2"]]}\n\n'
-            "Do not include any text, explanation, or markdown formatting outside the JSON.\n\n"
+            "2. Include data from EVERY source document — do not skip any.\n"
+            "3. Add a 'Source File' column to identify which document each row came from.\n"
+            "4. Do not include any text, explanation, or markdown outside the JSON.\n\n"
             f"Document text:\n{all_text}\n\n"
             f"Extraction request: {query}"
         )

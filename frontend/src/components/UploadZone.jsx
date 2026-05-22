@@ -1,12 +1,12 @@
 import { UploadCloud } from 'lucide-react'
 import { useRef } from 'react'
 
-export default function UploadZone({ onUpload, isUploading }) {
+export default function UploadZone({ onUpload, isUploading, uploadProgress }) {
   const inputRef = useRef(null);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      onUpload(e.target.files[0]);
+      onUpload(Array.from(e.target.files));
       e.target.value = '';
     }
   };
@@ -14,9 +14,13 @@ export default function UploadZone({ onUpload, isUploading }) {
   const handleDrop = (e) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      onUpload(e.dataTransfer.files[0]);
+      onUpload(Array.from(e.dataTransfer.files));
     }
   };
+
+  const progressText = uploadProgress 
+    ? `Uploading ${uploadProgress.current}/${uploadProgress.total}...` 
+    : 'Processing...';
 
   return (
     <div 
@@ -32,16 +36,17 @@ export default function UploadZone({ onUpload, isUploading }) {
       <UploadCloud size={22} className="text-accent shrink-0 opacity-80" />
       <div className="flex-1">
         <span className="text-sm font-medium">
-          {isUploading ? 'Processing document...' : 'Upload Document'}
+          {isUploading ? progressText : 'Upload Documents'}
         </span>
-        <span className="text-xs text-gray-400 ml-2">PDF, TXT, CSV</span>
+        <span className="text-xs text-gray-400 ml-2">PDF, DOCX, XLSX, TXT, CSV</span>
       </div>
       <input 
         ref={inputRef}
         type="file" 
         className="hidden"
         onChange={handleFileChange} 
-        accept=".pdf,.txt,.csv" 
+        accept=".pdf,.txt,.csv,.docx,.xlsx" 
+        multiple
       />
     </div>
   )

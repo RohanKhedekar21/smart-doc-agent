@@ -22,6 +22,7 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null);
   const [isThinking, setIsThinking] = useState(false);
   const [showDocPanel, setShowDocPanel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -142,22 +143,35 @@ function App() {
     }
   };
 
-  const handleUpload = async (file) => {
-    if (!activeSessionId) return;
+  const handleUpload = async (files) => {
+    if (!activeSessionId || !files || files.length === 0) return;
     setIsUploading(true);
-    try {
-      await uploadFile(activeSessionId, file);
-      // Reload messages from DB (the backend saved the AI summary automatically)
-      fetchSessionMessages(activeSessionId);
-      fetchDocuments(activeSessionId);
-    } catch (e) {
+    const total = files.length;
+    let failedFiles = [];
+
+    for (let i = 0; i < total; i++) {
+      setUploadProgress({ current: i + 1, total });
+      try {
+        await uploadFile(activeSessionId, files[i]);
+      } catch (e) {
+        failedFiles.push(files[i].name);
+      }
+    }
+
+    // Refresh documents and messages once after all uploads complete
+    fetchSessionMessages(activeSessionId);
+    fetchDocuments(activeSessionId);
+
+    if (failedFiles.length > 0) {
       setMessages(prev => [...prev, {
         id: Date.now(),
-        text: "Upload failed. Please check your connection or file format and try again.",
+        text: `⚠️ Failed to upload: ${failedFiles.join(", ")}. Please check the file format and try again.`,
         sender: "ai"
       }]);
     }
+
     setIsUploading(false);
+    setUploadProgress(null);
   };
 
   const handleDeleteDocument = async (docId) => {
@@ -250,7 +264,7 @@ function App() {
           <div className="flex items-center gap-3">
             {activeSession && (
               <>
-                <UploadZone onUpload={handleUpload} isUploading={isUploading} />
+                <UploadZone onUpload={handleUpload} isUploading={isUploading} uploadProgress={uploadProgress} />
                 <button 
                   onClick={() => setShowExtract(true)}
                   className="p-2.5 rounded-xl border transition-all duration-200 bg-white/5 border-panel-border text-gray-400 hover:text-white hover:border-white/20"

@@ -154,12 +154,14 @@ def delete_document(
 
 # File upload constraints
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-ALLOWED_EXTENSIONS = {".pdf", ".txt", ".csv"}
+ALLOWED_EXTENSIONS = {".pdf", ".txt", ".csv", ".docx", ".xlsx"}
 ALLOWED_MIME_TYPES = {
     "application/pdf",
     "text/plain",
     "text/csv",
     "application/octet-stream",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # .docx
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # .xlsx
 }
 
 
