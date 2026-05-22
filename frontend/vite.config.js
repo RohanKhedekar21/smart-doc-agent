@@ -8,6 +8,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  envPrefix: ['VITE_', 'BACKEND_'],
   css: {
     // Explicitly clear PostCSS plugins to prevent Vite from
     // auto-detecting tailwindcss as a PostCSS plugin
