@@ -110,7 +110,7 @@ async def auth_callback(request: Request, db: DBSession = Depends(get_db)):
         value=access_token,
         httponly=True,
         secure=is_prod,  # True in production with HTTPS
-        samesite="lax",
+        samesite="none" if is_prod else "lax",
         max_age=ACCESS_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
     )
     return response
@@ -131,5 +131,10 @@ async def get_me(current_user: models.User = Depends(get_current_user)):
 async def logout():
     """Clear the auth cookie."""
     response = Response(content='{"detail": "Logged out"}', media_type="application/json")
-    response.delete_cookie("access_token")
+    is_prod = os.getenv("ENV", "development") == "production" or FRONTEND_URL.startswith("https")
+    response.delete_cookie(
+        "access_token",
+        secure=is_prod,
+        samesite="none" if is_prod else "lax"
+    )
     return response
