@@ -242,7 +242,7 @@ function App() {
   const activeSession = sessions.find(s => s.session_id === activeSessionId);
 
   return (
-    <div className="flex h-screen w-screen bg-bg-color text-gray-100 font-sans overflow-hidden">
+    <div className="flex h-[100dvh] w-screen bg-bg-color text-gray-100 font-sans overflow-hidden">
       {/* Mobile Sidebar Backdrop */}
       {isSidebarOpen && (
         <div 

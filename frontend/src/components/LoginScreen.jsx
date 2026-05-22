@@ -7,9 +7,10 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-bg-color overflow-hidden relative">
+    <div className="min-h-[100dvh] w-full flex items-center justify-center bg-bg-color overflow-hidden relative">
       {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 rounded-full blur-[120px] animate-pulse"></div>
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}} />
         <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}} />

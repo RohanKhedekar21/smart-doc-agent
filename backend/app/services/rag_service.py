@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from typing import Dict, List
 
 from dotenv import load_dotenv
 from google import genai
@@ -78,7 +79,7 @@ def save_chunks(db: DBSession, session_id: str, document_id: int, chunks: list, 
 # ── Helpers ────────────────────────────────────────────────────────
 
 
-def _get_full_text_per_document(db: DBSession, session_id: str) -> dict[str, str]:
+def _get_full_text_per_document(db: DBSession, session_id: str) -> Dict[str, str]:
     """Return {filename: full_text} for every document in a session.
 
     Uses the stored ``extracted_text`` column first.  For legacy rows where
@@ -91,7 +92,7 @@ def _get_full_text_per_document(db: DBSession, session_id: str) -> dict[str, str
         .all()
     )
 
-    result: dict[str, str] = {}
+    result: Dict[str, str] = {}
     for doc in docs:
         text = doc.extracted_text or ""
         # If text appears truncated, rebuild from chunks
@@ -137,7 +138,7 @@ def _get_chat_history(db: DBSession, session_id: str, limit: int = 10) -> str:
 
 
 def _get_chunk_context(db: DBSession, session_id: str, query_vector: list,
-                       unique_filenames: list[str], chunks_per_doc: int = 5) -> str:
+                       unique_filenames: List[str], chunks_per_doc: int = 5) -> str:
     """Retrieve the top-N most relevant chunks per document via cosine similarity."""
     all_results = []
     for fname in unique_filenames:
@@ -198,7 +199,7 @@ def query_session(db: DBSession, session_id: str, query: str) -> dict:
                 f"{_FORMAT_RULES}"
             )
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-1.5-flash",
                 contents=prompt,
             )
             return {"answer": response.text, "sources": []}
@@ -272,7 +273,7 @@ def query_session(db: DBSession, session_id: str, query: str) -> dict:
             f"User's Question: {query}"
         )
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             contents=prompt,
         )
         return {"answer": response.text, "sources": sources}
@@ -297,7 +298,7 @@ def summarize_text(text: str, filename: str) -> str:
             f"Document text:\n{preview}"
         )
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             contents=prompt,
         )
         return response.text
@@ -347,7 +348,7 @@ def extract_structured_data(db: DBSession, session_id: str, query: str) -> dict:
             f"Extraction request: {query}"
         )
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             contents=prompt,
         )
 
@@ -424,7 +425,7 @@ def compare_documents(db: DBSession, session_id: str, doc1_filename: str, doc2_f
             f"User's Comparison Query: {query}"
         )
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             contents=prompt,
         )
         return {"answer": response.text, "sources": [doc1_filename, doc2_filename], "error": False}
