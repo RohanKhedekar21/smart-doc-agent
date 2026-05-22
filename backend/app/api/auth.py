@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlencode
 
 from authlib.integrations.starlette_client import OAuth
 from dotenv import load_dotenv
@@ -42,10 +43,25 @@ def create_access_token(data: dict) -> str:
 
 
 def get_current_user(request: Request, db: DBSession = Depends(get_db)) -> models.User:
-    """Extract user from the HttpOnly cookie. Use as a FastAPI dependency."""
-    token = request.cookies.get("access_token")
+    """Extract user from Authorization header (preferred) or HttpOnly cookie (fallback).
+
+    Supports both mechanisms so the app works on all browsers including
+    mobile where third-party cookies are blocked.
+    """
+    token = None
+
+    # 1. Try Authorization header first (works everywhere, including mobile)
+    auth_header = request.headers.get("authorization")
+    if auth_header and auth_header.lower().startswith("bearer "):
+        token = auth_header[7:]
+
+    # 2. Fall back to HttpOnly cookie (desktop browsers, legacy sessions)
+    if not token:
+        token = request.cookies.get("access_token")
+
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_email: str = payload.get("sub")
@@ -73,7 +89,13 @@ async def login(request: Request):
 
 @router.get("/callback", name="auth_callback")
 async def auth_callback(request: Request, db: DBSession = Depends(get_db)):
-    """Handle the OAuth callback from Google."""
+    """Handle the OAuth callback from Google.
+
+    Instead of setting an HttpOnly cookie (which mobile browsers block
+    for cross-origin requests), we pass the JWT token as a URL query
+    parameter to the frontend.  The frontend stores it in localStorage
+    and sends it via the Authorization header on every API call.
+    """
     try:
         token = await oauth.google.authorize_access_token(request)
     except Exception:
@@ -100,20 +122,12 @@ async def auth_callback(request: Request, db: DBSession = Depends(get_db)):
         user.picture = picture
         db.commit()
 
-    # Create JWT and set as HttpOnly cookie
+    # Create JWT and redirect to frontend with the token in the URL
     access_token = create_access_token(data={"sub": user.email})
-    response = RedirectResponse(url=FRONTEND_URL)
 
-    is_prod = os.getenv("ENV", "development") == "production" or FRONTEND_URL.startswith("https")
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=is_prod,  # True in production with HTTPS
-        samesite="none" if is_prod else "lax",
-        max_age=ACCESS_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-    )
-    return response
+    # Build redirect URL with token as query parameter
+    redirect_url = f"{FRONTEND_URL}?token={access_token}"
+    return RedirectResponse(url=redirect_url)
 
 
 @router.get("/me")
@@ -129,8 +143,9 @@ async def get_me(current_user: models.User = Depends(get_current_user)):
 
 @router.post("/logout")
 async def logout():
-    """Clear the auth cookie."""
+    """Clear the auth cookie (for legacy sessions) and confirm logout."""
     response = Response(content='{"detail": "Logged out"}', media_type="application/json")
+    # Clear cookie for any legacy sessions that still use cookie auth
     is_prod = os.getenv("ENV", "development") == "production" or FRONTEND_URL.startswith("https")
     response.delete_cookie(
         "access_token",

@@ -2,10 +2,27 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.BACKEND_API_URL || 'http://localhost:8000/api/v1';
 
-// Create an axios instance with credentials enabled for HttpOnly cookies
+// ── Token helpers ─────────────────────────────────────────────────
+
+const TOKEN_KEY = 'smart_agent_token';
+
+export const getToken = () => localStorage.getItem(TOKEN_KEY);
+export const setToken = (token) => localStorage.setItem(TOKEN_KEY, token);
+export const clearToken = () => localStorage.removeItem(TOKEN_KEY);
+
+// Create an axios instance with credentials enabled (cookie fallback)
 const api = axios.create({
     baseURL: API_URL,
     withCredentials: true,
+});
+
+// Attach Authorization header to every request if a token exists
+api.interceptors.request.use((config) => {
+    const token = getToken();
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
 });
 
 // ── Auth ──────────────────────────────────────────────────────────
@@ -16,8 +33,12 @@ export const getMe = async () => {
 };
 
 export const logout = async () => {
-    const res = await api.post('/auth/logout');
-    return res.data;
+    try {
+        await api.post('/auth/logout');
+    } catch {
+        // Cookie will be cleared regardless
+    }
+    clearToken();
 };
 
 export const getLoginUrl = () => `${API_URL}/auth/login`;

@@ -11,7 +11,7 @@ import LoginScreen from './components/LoginScreen'
 import { 
   getSessions, createSession, renameSession, deleteSession,
   uploadFile, chatWithSession, getDocuments, deleteDocument, getMessages,
-  getMe, logout
+  getMe, logout, setToken, clearToken
 } from './services/api'
 
 function App() {
@@ -32,6 +32,14 @@ function App() {
 
   // Check authentication on mount
   useEffect(() => {
+    // Capture token from URL if redirected from OAuth callback
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      setToken(token);
+      // Clean the URL so the token isn't visible in the address bar
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
     checkAuth();
   }, []);
 
@@ -52,6 +60,7 @@ function App() {
     } catch {
       // Cookie will be cleared regardless
     }
+    clearToken();
     setUser(null);
     setSessions([]);
     setActiveSessionId(null);
