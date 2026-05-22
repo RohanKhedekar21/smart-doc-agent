@@ -68,12 +68,12 @@ def query_session(db: DBSession, session_id: str, query: str) -> dict:
 
     query_vector = embed_text(query)
 
-    # Use pgvector cosine distance to find top 3 most relevant chunks
+    # Use pgvector cosine distance to find top 15 most relevant chunks to enable cross-document comparisons
     results = (
         db.query(models.DocumentChunk)
         .filter(models.DocumentChunk.session_id == session_id)
         .order_by(models.DocumentChunk.embedding.cosine_distance(query_vector))
-        .limit(3)
+        .limit(15)
         .all()
     )
 
