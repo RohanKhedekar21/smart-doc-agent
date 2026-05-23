@@ -199,7 +199,7 @@ def query_session(db: DBSession, session_id: str, query: str) -> dict:
                 f"{_FORMAT_RULES}"
             )
             response = client.models.generate_content(
-                model="gemini-1.5-flash",
+                model="gemini-3.5-flash",
                 contents=prompt,
             )
             return {"answer": response.text, "sources": []}
@@ -273,7 +273,7 @@ def query_session(db: DBSession, session_id: str, query: str) -> dict:
             f"User's Question: {query}"
         )
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-3.5-flash",
             contents=prompt,
         )
         return {"answer": response.text, "sources": sources}
@@ -298,7 +298,7 @@ def summarize_text(text: str, filename: str) -> str:
             f"Document text:\n{preview}"
         )
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-3.5-flash",
             contents=prompt,
         )
         return response.text
@@ -348,7 +348,7 @@ def extract_structured_data(db: DBSession, session_id: str, query: str) -> dict:
             f"Extraction request: {query}"
         )
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-3.5-flash",
             contents=prompt,
         )
 
@@ -425,7 +425,7 @@ def compare_documents(db: DBSession, session_id: str, doc1_filename: str, doc2_f
             f"User's Comparison Query: {query}"
         )
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-3.5-flash",
             contents=prompt,
         )
         return {"answer": response.text, "sources": [doc1_filename, doc2_filename], "error": False}
