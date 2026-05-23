@@ -225,7 +225,7 @@ function App() {
   // Show loading while checking auth
   if (!authChecked) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-bg-color">
+      <div className="min-h-[100dvh] w-full flex items-center justify-center bg-bg-color">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-full border-4 border-accent/30 border-t-accent animate-spin" />
           <p className="text-gray-400 text-sm">Loading...</p>
@@ -242,7 +242,7 @@ function App() {
   const activeSession = sessions.find(s => s.session_id === activeSessionId);
 
   return (
-    <div className="flex h-[100dvh] w-screen bg-bg-color text-gray-100 font-sans overflow-hidden">
+    <div className="flex h-[100dvh] w-full bg-bg-color text-gray-100 font-sans overflow-hidden">
       {/* Mobile Sidebar Backdrop */}
       {isSidebarOpen && (
         <div 
