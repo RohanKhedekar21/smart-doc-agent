@@ -7,7 +7,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="min-h-[100dvh] w-full flex items-center justify-center bg-bg-color overflow-hidden relative">
+    <div className="fixed inset-0 flex items-center justify-center bg-bg-color overflow-hidden">
       {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 rounded-full blur-[120px] animate-pulse"></div>
