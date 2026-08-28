@@ -20,7 +20,7 @@ Once inside a workspace, you can add documents.
 
 1. Locate the **Upload Zone** on the right side of the screen.
 2. Drag and drop your files into the dotted area, or click "Select File" to browse.
-3. Supported formats: `.pdf`, `.txt`, `.csv`.
+3. Supported formats: `.pdf`, `.txt`, `.csv`, `.docx`, `.xlsx`.
 4. **Auto-Summary:** Upon a successful upload, the AI will instantly read the beginning of the document and post an automated "Document Summary" card into the chat.
 
 ---

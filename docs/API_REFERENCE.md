@@ -184,11 +184,11 @@ Redirects the user to Google's OAuth consent screen for logging in.
 
 ### `GET /api/v1/auth/callback`
 OAuth callback handler. Google redirects back to this endpoint with authorization code.
-Upon validation, redirects user back to front-end home with access token cookie set.
+Upon validation, redirects user back to the frontend with the `token` appended as a query parameter (e.g. `/?token=ey...`). The frontend securely stores this JWT in `localStorage` and includes it in the `Authorization: Bearer <token>` header of all subsequent API requests.
 - **Response:** `307 Temporary Redirect`
 
 ### `GET /api/v1/auth/me`
-Retrieves the profile of the currently logged-in user.
+Retrieves the profile of the currently logged-in user by validating the JWT token.
 - **Response:** `200 OK`
   ```json
   {
@@ -200,5 +200,5 @@ Retrieves the profile of the currently logged-in user.
   ```
 
 ### `POST /api/v1/auth/logout`
-Logs the user out by deleting their HttpOnly `access_token` session cookie.
+Logs the user out. The frontend clears the JWT from `localStorage`. The backend explicitly clears any legacy `access_token` cookies.
 - **Response:** `200 OK` `{"detail": "Logged out"}`

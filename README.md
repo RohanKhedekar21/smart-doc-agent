@@ -8,13 +8,13 @@ A full-stack AI-powered document analysis and Q&A workspace. Upload PDFs, TXTs, 
 | --------- | ------------------------------ |
 | Frontend  | React 18, Vite, Tailwind CSS 4 |
 | Backend   | Python 3.12+, FastAPI, SQLAlchemy |
-| AI Engine | Google Gemini (google-genai SDK) |
+| AI Engine | Google Gemini (`gemini-3.5-flash`, `gemini-embedding-001`) |
 | Database  | PostgreSQL                     |
 | Vector DB | PostgreSQL (pgvector extension) |
 
 ## Project Structure
 
-```
+```text
 File Reader Agent/
 ├── backend/
 │   ├── app/
@@ -22,7 +22,9 @@ File Reader Agent/
 │   │   ├── db/           # SQLAlchemy database models & connection
 │   │   ├── models/       # Pydantic request/response schemas
 │   │   └── services/     # Document parsing & RAG AI logic
+│   ├── ai_tests/         # Ad-hoc scripts for testing AI endpoints
 │   ├── .env              # Environment variables (GEMINI_API_KEY)
+│   ├── Dockerfile        # Container definition for the backend
 │   ├── requirements.txt  # Python dependencies
 │   └── run.py            # Backend entry point
 ├── frontend/
@@ -31,6 +33,8 @@ File Reader Agent/
 │   │   └── services/     # API client (axios)
 │   ├── index.html
 │   └── package.json
+├── docs/                 # Documentation (Architecture, APIs, Deployment)
+├── docker-compose.yml    # Local PostgreSQL + pgvector setup
 ├── setup.bat             # One-click first-time setup
 ├── start.bat             # One-click launch both servers
 └── README.md
@@ -41,6 +45,7 @@ File Reader Agent/
 - **Python 3.12+** (tested on 3.14)
 - **Node.js 18+** and npm
 - A **Google Gemini API Key** — get one free at [Google AI Studio](https://aistudio.google.com/apikey)
+- **Docker** (Optional, to run the local PostgreSQL database)
 
 ## Quick Start
 
@@ -62,7 +67,7 @@ cd ../frontend
 npm install
 ```
 
-### 2. Configure your API Key
+### 2. Configure your API Key & Database
 
 Edit `backend/.env` and replace the placeholder:
 
@@ -93,18 +98,19 @@ npm run dev
 ### 4. Use It
 
 1. Open **http://localhost:5173** in your browser
-2. Click **"+ New Chat"** to create a workspace
-3. Click the **Upload Document** zone and select a PDF, TXT, or CSV
+2. Click **"+ New Workspace"** to create a session
+3. Click the **Upload Document** zone and select a PDF, TXT, CSV, DOCX, or XLSX
 4. Once processed, type a question in the chat input — the AI will answer based on your document!
 
 ## Documentation
 
 For an in-depth look at how Smart Document Agent works, please refer to our comprehensive documentation suite:
 
-- 🏗️ **[Architecture & Design](docs/ARCHITECTURE.md):** Tech stack, database schema, and how the Targeted Semantic Retrieval (RAG) pipeline is built.
+- 🏗️ **[Architecture & Design](docs/ARCHITECTURE.md):** Tech stack, database schema, and architectural diagrams.
 - 📖 **[API Reference](docs/API_REFERENCE.md):** Detailed endpoints, request/response schemas for the FastAPI backend.
 - 💡 **[User Guide](docs/USER_GUIDE.md):** How to use the frontend features, including Data Extraction and Document Comparison.
 - 🚀 **[Feature Highlights](FEATURE_HIGHLIGHTS.md):** A pitch guide detailing the primary benefits and advanced AI integrations.
+- 🌐 **[Deployment Guide](docs/DEPLOYMENT.md):** Instructions for hosting on Render and Vercel.
 
 Alternatively, once the backend is running, you can visit **http://127.0.0.1:8000/docs** for the interactive Swagger UI.
 

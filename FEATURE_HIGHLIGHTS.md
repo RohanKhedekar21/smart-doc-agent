@@ -41,7 +41,7 @@ Smart Document Agent is an intelligent, multi-modal workspace that allows profes
 - **The Pitch:** *"Enterprise-grade AI power wrapped in a beautifully modern, consumer-grade aesthetic. It doesn't just work well; it feels premium."*
 
 ### 7. Private & Secure Multi-Tenant Workspaces
-- **The Feature:** Secure multi-user environment protected by Google OAuth2 (Authlib) login and HttpOnly JWT session cookies. Every database transaction and vector search query is isolated by user ID to prevent data leaks. 
+- **The Feature:** Secure multi-user environment protected by Google OAuth2 (Authlib) login and token-based authentication via localStorage. Every database transaction and vector search query is isolated by user ID to prevent data leaks. 
 - **The Pitch:** *"Enterprise-ready security. Your chats, documents, and workspaces are completely private and accessible only to you."*
 
 ---
@@ -50,8 +50,8 @@ Smart Document Agent is an intelligent, multi-modal workspace that allows profes
 - **Frontend:** React, Vite, Tailwind CSS v4, Axios.
 - **Backend:** Python 3.12+, FastAPI, SQLAlchemy, SlowAPI (rate limiting).
 - **Database & Vector Store:** PostgreSQL with pgvector extension (for high-performance cosine similarity searches).
-- **AI/LLM:** Google Gemini 2.5 Flash (Generation) & Gemini Text-Embedding-004 (Vectorization).
-- **Security:** CSRF-safe HttpOnly cookies, JWT authentication, and automated prompt injection query sanitization.
+- **AI/LLM:** Google Gemini 3.5 Flash (Generation) & Gemini Embedding-001 (Vectorization).
+- **Security:** Token-based JWT authentication and automated prompt injection query sanitization.
 
 ---
 

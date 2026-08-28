@@ -7,8 +7,8 @@ Smart Document Agent is a modern, modular document intelligence platform that pr
 - **Frontend:** React 18, Vite, Tailwind CSS v4, Lucide Icons, Axios.
 - **Backend:** Python 3.12+, FastAPI, SQLAlchemy, SlowAPI (rate limiting).
 - **Database & Vector Store:** PostgreSQL with pgvector extension (unified storage for relational metadata and 768-dimensional text embeddings).
-- **AI/LLM Engine:** Google Gemini SDK (`gemini-2.5-flash` for generation/summarization, `text-embedding-004` for vectors).
-- **Authentication:** Google OAuth2 (via Authlib) and HttpOnly JWT session cookies.
+- **AI/LLM Engine:** Google Gemini SDK (`gemini-3.5-flash` for generation/summarization, `gemini-embedding-001` for vectors).
+- **Authentication:** Google OAuth2 (via Authlib) with JWT tokens stored in localStorage (and legacy HttpOnly cookie fallback).
 
 ---
 
@@ -17,11 +17,50 @@ Smart Document Agent is a modern, modular document intelligence platform that pr
 The system is separated into a frontend client and a RESTful backend API.
 
 ```mermaid
-graph TD
-    Client[React Frontend] -->|HTTPS Requests| API[FastAPI Backend]
-    API --> DB[(PostgreSQL + pgvector)]
-    API --> LLM[Google Gemini API]
-    Client -->|OAuth Flow| GoogleAuth[Google OAuth 2.0]
+architecture-beta
+    group frontend(cloud)[Frontend App]
+    service client(internet)[React SPA] in frontend
+
+    group backend(server)[Backend Services]
+    service api(server)[FastAPI Server] in backend
+    service db(database)[PostgreSQL + pgvector] in backend
+
+    group external(cloud)[External APIs]
+    service llm(server)[Google Gemini AI] in external
+    service auth(internet)[Google OAuth 2.0] in external
+
+    client:R --> L:api
+    api:R --> L:db
+    api:T --> B:llm
+    client:B --> T:auth
+```
+
+---
+
+## Authentication Flow
+
+To support modern browser security policies (especially on mobile browsers that block third-party cookies), the application uses a token-based authentication flow.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant Google
+
+    User->>Frontend: Clicks "Sign in with Google"
+    Frontend->>Backend: Redirects to /api/v1/auth/login
+    Backend->>Google: Initiates OAuth Flow
+    Google-->>User: Prompts for Consent
+    User->>Google: Approves
+    Google->>Backend: Redirects to /api/v1/auth/callback with code
+    Backend->>Google: Exchanges code for token & profile info
+    Backend->>Backend: Finds or creates User in DB
+    Backend->>Backend: Generates signed JWT (sub: email)
+    Backend->>Frontend: Redirects to /?token=JWT
+    Frontend->>Frontend: Intercepts URL, stores JWT in localStorage
+    Frontend->>Backend: Next Request with `Authorization: Bearer JWT`
+    Backend-->>Frontend: Validates JWT and returns private data
 ```
 
 ---
@@ -77,35 +116,52 @@ Stores the chat history.
 
 ## RAG Pipeline (Retrieval-Augmented Generation)
 
-To overcome LLM context limits and reduce token costs, the application employs a targeted semantic retrieval pipeline.
+To overcome LLM context limits and reduce token costs, the application employs a targeted semantic retrieval pipeline, with a full-text fallback for smaller document sets.
+
+```mermaid
+flowchart TD
+    A[User Query] --> B[Sanitize Input]
+    B --> C{Total Session Docs\nText < 200,000 chars?}
+    
+    C -- Yes (Full Context) --> D[Inject Full Text of ALL Documents into Prompt]
+    
+    C -- No (Chunk Retrieval) --> E[Generate Query Vector\nvia gemini-embedding-001]
+    E --> F[Semantic Search in pgvector\nOrderBy Cosine Distance]
+    F --> G[Select Top 5 Chunks per Document]
+    G --> H[Inject Selected Excerpts into Prompt]
+    
+    D --> I[Google Gemini-3.5-Flash]
+    H --> I
+    
+    I --> J[AI Response Generated]
+    J --> K[Append Source Citations]
+    K --> L[Return to User]
+```
 
 ### 1. Ingestion Phase (`document_service.py` & `routes.py`)
-1. **Upload:** User uploads a PDF, TXT, CSV, DOCX, or XLSX file (size validated dynamically in chunks up to 10MB).
-2. **Parsing:** Text is extracted using format-specific libraries (`pypdf` for PDFs, `python-docx` for Word, `openpyxl` for Excel).
+1. **Upload:** User uploads a file (validated dynamically in chunks up to 10MB). Supported formats: `.pdf`, `.txt`, `.csv`, `.docx`, `.xlsx`.
+2. **Parsing:** Text is extracted using format-specific libraries (`pypdf`, `python-docx`, `openpyxl`).
 3. **Chunking:** Text is split into chunks of 1000 characters with a 200-character overlap to preserve context boundaries.
 4. **Embedding:** Each chunk is sent to Gemini's embedding model to generate a high-dimensional vector.
-5. **Storage:** Chunks and their corresponding vectors are saved to the PostgreSQL database in the `document_chunks` table.
+5. **Storage:** Chunks and their corresponding vectors are saved to PostgreSQL in the `document_chunks` table.
 6. **Auto-Summary:** The first 3000 characters are sent to Gemini to generate an instant "Document Summary" card.
 
 ### 2. Retrieval & Generation Phase (`rag_service.py`)
 Used in Chat, Data Extraction, and Document Comparison.
 
 1. **Query Sanitization:** The user's input query is sanitized (truncated, null bytes removed, markdown fences escaped) to prevent prompt injection.
-2. **Query Embedding:** The user's prompt is embedded into a vector.
-3. **Semantic Similarity Search:** The system uses pgvector's cosine distance operator (`<=>`) to query the database.
-4. **Filtering & Ranking:**
-   - **Chat:** Retrieves the top 3 most relevant chunks across all documents.
-   - **Extraction:** Retrieves the top 5 most relevant chunks across all documents.
-   - **Comparison:** Filters by specific filenames, retrieving the top 4 chunks from Document A and top 4 from Document B.
-5. **Generation:** The highly relevant text chunks are injected into a prompt template alongside the user's query and sent to Gemini Flash.
-6. **Citations:** The response is returned to the user, strictly citing the source filenames of the injected chunks.
+2. **Dynamic Context Strategy:**
+   - **Full Context:** If the total character count of all documents in the session is under 200,000 characters, the *entire text* of all documents is injected into the prompt for maximum comprehension.
+   - **Targeted Retrieval:** If the text exceeds the limit, the user's prompt is embedded into a vector, and pgvector cosine distance (`<=>`) is used to retrieve the **Top 5 most relevant chunks per document**.
+3. **Generation:** The context is injected into a prompt template alongside the user's query and recent chat history, then sent to `gemini-3.5-flash`.
+4. **Citations:** The response is returned to the user, strictly citing the source filenames of the injected documents.
 
 ---
 
 ## Security & Deployment Considerations
-- **Environment Separation:** API credentials, JWT secrets, and session secrets are managed dynamically via `.env`.
+- **Environment Separation:** API credentials and JWT secrets are managed dynamically via `.env`.
 - **Access Control:** Every database operation is scoped to the authenticated user's ID to prevent IDOR (Insecure Direct Object Reference).
-- **Rate Limiting:** Protects the endpoints from resource exhaustion using slowapi.
+- **Rate Limiting:** Protects endpoints from resource exhaustion using `slowapi`.
 - **Production Path:**
-  - Configure backend and database services using the provided `docker-compose.yml`.
-  - Ensure HTTPS is terminated at the load balancer or proxy to secure the HttpOnly session cookies.
+  - Standard deployment via Docker or native Python on PaaS providers like Render.
+  - See `docs/DEPLOYMENT.md` for specific host setup instructions.
