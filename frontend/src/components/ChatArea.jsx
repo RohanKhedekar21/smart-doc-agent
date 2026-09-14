@@ -105,6 +105,24 @@ export default function ChatArea({ messages, onSendMessage, isLoading }) {
       </div>
 
       <div className="p-4 md:p-6 md:px-10 bg-bg-color/80 backdrop-blur-md border-t border-panel-border">
+        <div className="flex flex-wrap gap-2 mb-3">
+          <button 
+            type="button"
+            onClick={() => onSendMessage("What were the key risk factors mentioned in Q3?")}
+            disabled={isLoading}
+            className="text-xs bg-white/5 border border-panel-border hover:bg-white/10 text-gray-300 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50 cursor-pointer"
+          >
+            What were the key risk factors in Q3?
+          </button>
+          <button 
+            type="button"
+            onClick={() => onSendMessage("Summarize the financial highlights in a table.")}
+            disabled={isLoading}
+            className="text-xs bg-white/5 border border-panel-border hover:bg-white/10 text-gray-300 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50 cursor-pointer"
+          >
+            Summarize financial highlights in a table
+          </button>
+        </div>
         <form 
           className="flex items-center bg-panel-bg border border-panel-border rounded-2xl p-1.5 px-3 md:p-2 md:px-4 transition-all duration-300 focus-within:border-accent/50 focus-within:ring-4 focus-within:ring-accent/10" 
           onSubmit={handleSubmit}

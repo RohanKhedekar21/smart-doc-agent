@@ -130,6 +130,20 @@ async def auth_callback(request: Request, db: DBSession = Depends(get_db)):
     return RedirectResponse(url=redirect_url)
 
 
+@router.post("/guest")
+async def login_guest(db: DBSession = Depends(get_db)):
+    """Create a temporary guest user and return a JWT."""
+    import uuid
+    guest_email = f"guest_{uuid.uuid4().hex[:8]}@smartagent.local"
+    user = models.User(email=guest_email, name="Guest Explorer", picture="")
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    access_token = create_access_token(data={"sub": user.email})
+    return {"token": access_token}
+
+
 @router.get("/me")
 async def get_me(current_user: models.User = Depends(get_current_user)):
     """Return the currently authenticated user's profile."""

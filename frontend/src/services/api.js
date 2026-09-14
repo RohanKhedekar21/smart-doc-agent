@@ -43,6 +43,11 @@ export const logout = async () => {
 
 export const getLoginUrl = () => `${API_URL}/auth/login`;
 
+export const loginAsGuest = async () => {
+    const res = await api.post('/auth/guest');
+    return res.data;
+};
+
 // ── Sessions ──────────────────────────────────────────────────────
 
 export const getSessions = async () => {

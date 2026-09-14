@@ -1,7 +1,7 @@
 import { UploadCloud } from 'lucide-react'
 import { useRef } from 'react'
 
-export default function UploadZone({ onUpload, isUploading, uploadProgress }) {
+export default function UploadZone({ onUpload, isUploading, uploadProgress, isGuest, onLoginRequired }) {
   const inputRef = useRef(null);
 
   const handleFileChange = (e) => {
@@ -13,8 +13,22 @@ export default function UploadZone({ onUpload, isUploading, uploadProgress }) {
 
   const handleDrop = (e) => {
     e.preventDefault();
+    if (isGuest) {
+      onLoginRequired("upload your own files");
+      return;
+    }
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       onUpload(Array.from(e.dataTransfer.files));
+    }
+  };
+
+  const handleClick = () => {
+    if (isGuest) {
+      onLoginRequired("upload your own files");
+      return;
+    }
+    if (!isUploading) {
+      inputRef.current?.click();
     }
   };
 
@@ -33,7 +47,7 @@ export default function UploadZone({ onUpload, isUploading, uploadProgress }) {
           ? 'border-accent/50 bg-accent/10 animate-pulse px-2 py-1.5' 
           : 'border-accent/30 bg-accent/5 hover:border-accent hover:bg-accent/10 p-2 md:px-4 md:py-2.5'
       }`}
-      onClick={() => !isUploading && inputRef.current?.click()}
+      onClick={handleClick}
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >

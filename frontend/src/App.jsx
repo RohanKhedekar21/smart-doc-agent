@@ -8,6 +8,7 @@ import SettingsModal from './components/SettingsModal'
 import ExtractModal from './components/ExtractModal'
 import CompareModal from './components/CompareModal'
 import LoginScreen from './components/LoginScreen'
+import LoginRequiredModal from './components/LoginRequiredModal'
 import { 
   getSessions, createSession, renameSession, deleteSession,
   uploadFile, chatWithSession, getDocuments, deleteDocument, getMessages,
@@ -29,6 +30,13 @@ function App() {
   const [showExtract, setShowExtract] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [shouldLoadSample, setShouldLoadSample] = useState(false);
+  const [loginRequiredMessage, setLoginRequiredMessage] = useState(null);
+
+  // Helper to show login modal
+  const requireLogin = (actionDescription) => {
+    setLoginRequiredMessage(`Please sign in with Google to ${actionDescription}.`);
+  };
 
   // Check authentication on mount
   useEffect(() => {
@@ -71,8 +79,12 @@ function App() {
   useEffect(() => {
     if (user) {
       fetchSessions();
+      if (shouldLoadSample) {
+        setShouldLoadSample(false);
+        handleTrySampleDocument();
+      }
     }
-  }, [user]);
+  }, [user, shouldLoadSample]);
 
   // Fetch documents and messages whenever active session changes
   useEffect(() => {
@@ -120,6 +132,10 @@ function App() {
   };
 
   const handleCreateSession = async () => {
+    if (user?.email?.startsWith('guest_')) {
+      requireLogin("create a new chat");
+      return;
+    }
     try {
       const newSession = await createSession();
       setSessions([newSession, ...sessions]);
@@ -131,7 +147,40 @@ function App() {
     }
   };
 
+  const handleTrySampleDocument = async () => {
+    try {
+      setIsUploading(true);
+      const newSession = await createSession();
+      setSessions((prev) => [newSession, ...prev]);
+      setActiveSessionId(newSession.session_id);
+      setMessages([{ id: 'default', text: "Loading sample document...", sender: "ai" }]);
+      setDocuments([]);
+
+      const response = await fetch('/sample_10k_report.txt');
+      const text = await response.text();
+      const file = new File([text], 'sample_10k_report.txt', { type: 'text/plain' });
+
+      setUploadProgress({ current: 1, total: 1 });
+      await uploadFile(newSession.session_id, file);
+
+      // Refresh
+      await fetchSessionMessages(newSession.session_id);
+      await fetchDocuments(newSession.session_id);
+
+      setIsUploading(false);
+      setUploadProgress(null);
+    } catch (e) {
+      console.error("Failed to try sample document", e);
+      setIsUploading(false);
+      setUploadProgress(null);
+    }
+  };
+
   const handleRenameSession = async (sessionId, name) => {
+    if (user?.email?.startsWith('guest_')) {
+      requireLogin("rename sessions");
+      return;
+    }
     try {
       const updated = await renameSession(sessionId, name);
       setSessions(sessions.map(s => s.session_id === sessionId ? updated : s));
@@ -141,6 +190,10 @@ function App() {
   };
 
   const handleDeleteSession = async (sessionId) => {
+    if (user?.email?.startsWith('guest_')) {
+      requireLogin("delete sessions");
+      return;
+    }
     try {
       await deleteSession(sessionId);
       const remaining = sessions.filter(s => s.session_id !== sessionId);
@@ -154,6 +207,10 @@ function App() {
   };
 
   const handleUpload = async (files) => {
+    if (user?.email?.startsWith('guest_')) {
+      requireLogin("upload your own files");
+      return;
+    }
     if (!activeSessionId || !files || files.length === 0) return;
     setIsUploading(true);
     const total = files.length;
@@ -185,6 +242,10 @@ function App() {
   };
 
   const handleDeleteDocument = async (docId) => {
+    if (user?.email?.startsWith('guest_')) {
+      requireLogin("delete documents");
+      return;
+    }
     try {
       const res = await deleteDocument(activeSessionId, docId);
       setDocuments(documents.filter(d => d.id !== docId));
@@ -236,10 +297,18 @@ function App() {
 
   // Show login screen if not authenticated
   if (!user) {
-    return <LoginScreen />;
+    return (
+      <LoginScreen 
+        onGuestLogin={async () => {
+          setShouldLoadSample(true);
+          await checkAuth();
+        }} 
+      />
+    );
   }
 
   const activeSession = sessions.find(s => s.session_id === activeSessionId);
+  const isGuest = user?.email?.startsWith('guest_');
 
   return (
     <div className="fixed inset-0 flex bg-bg-color text-gray-100 font-sans overflow-hidden">
@@ -308,16 +377,34 @@ function App() {
           <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
             {activeSession && (
               <>
-                <UploadZone onUpload={handleUpload} isUploading={isUploading} uploadProgress={uploadProgress} />
+                <UploadZone 
+                  onUpload={handleUpload} 
+                  isUploading={isUploading} 
+                  uploadProgress={uploadProgress} 
+                  isGuest={isGuest}
+                  onLoginRequired={requireLogin}
+                />
                 <button 
-                  onClick={() => setShowExtract(true)}
+                  onClick={() => {
+                    if (isGuest) {
+                      requireLogin("extract data");
+                      return;
+                    }
+                    setShowExtract(true);
+                  }}
                   className="hidden md:inline-flex p-2 md:p-2.5 rounded-xl border transition-all duration-200 bg-white/5 border-panel-border text-gray-400 hover:text-white hover:border-white/20 cursor-pointer"
                   title="Extract structured data"
                 >
                   <Table className="w-4 h-4 md:w-[18px] md:h-[18px]" />
                 </button>
                 <button 
-                  onClick={() => setShowCompare(true)}
+                  onClick={() => {
+                    if (isGuest) {
+                      requireLogin("compare documents");
+                      return;
+                    }
+                    setShowCompare(true);
+                  }}
                   className="hidden md:inline-flex p-2 md:p-2.5 rounded-xl border transition-all duration-200 bg-white/5 border-panel-border text-gray-400 hover:text-orange-400 hover:border-orange-500/30 cursor-pointer"
                   title="Compare Documents"
                 >
@@ -376,12 +463,21 @@ function App() {
             <p className="text-gray-400 text-center max-w-md mb-10 leading-relaxed text-[15px]">
               Securely upload PDFs, extract structured tables, and chat intelligently with your data using our advanced AI analysis engine.
             </p>
-            <button 
-              onClick={handleCreateSession}
-              className="px-8 py-3.5 bg-accent hover:bg-accent-hover text-white font-medium rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] hover:-translate-y-0.5 flex items-center gap-2"
-            >
-              Start New Session
-            </button>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <button 
+                onClick={handleCreateSession}
+                className="px-8 py-3.5 bg-accent hover:bg-accent-hover text-white font-medium rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] hover:-translate-y-0.5 flex items-center gap-2"
+              >
+                Start New Session
+              </button>
+              <button 
+                onClick={handleTrySampleDocument}
+                disabled={isUploading}
+                className="px-8 py-3.5 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl border border-panel-border hover:border-white/20 transition-all duration-300 flex items-center gap-2 disabled:opacity-50"
+              >
+                {isUploading ? "Loading Sample..." : "Try a Sample Document"}
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -408,6 +504,14 @@ function App() {
           documents={documents} 
           onClose={() => setShowCompare(false)}
           onComparisonComplete={() => fetchSessionMessages(activeSessionId)}
+        />
+      )}
+
+      {/* Login Required Modal */}
+      {loginRequiredMessage && (
+        <LoginRequiredModal 
+          message={loginRequiredMessage} 
+          onClose={() => setLoginRequiredMessage(null)} 
         />
       )}
     </div>

@@ -1,0 +1,26 @@
+ACME CORP - FORM 10-K EXCERPT
+FOR THE FISCAL YEAR ENDED DECEMBER 31, 2025
+
+ITEM 1A. RISK FACTORS
+
+Our business, operations, and financial condition are subject to various risks. You should carefully consider the risks described below.
+
+1. Economic and Market Risks
+We are highly dependent on global supply chains. Recent geopolitical tensions in Eastern Europe and Southeast Asia have led to a 14% increase in our raw material costs (specifically lithium and cobalt) during Q3. If these costs continue to rise without our ability to pass them on to consumers, our profit margins will be severely degraded. Furthermore, inflation has reduced consumer discretionary spending, which negatively impacted our Q3 sales volume by 8% year-over-year.
+
+2. Technology and Cybersecurity Risks
+We experienced a sophisticated ransomware attack in October 2025 targeting our cloud infrastructure. While no customer financial data was compromised, the breach caused a 24-hour disruption to our online storefront. We estimate the incident cost us $1.2 million in lost revenue and remediation efforts. Future attacks could result in regulatory fines, particularly under the GDPR in Europe or the CCPA in California.
+
+3. Regulatory and Legal Risks
+New environmental regulations proposed by the EPA could require us to retrofit three of our largest manufacturing plants by 2028. We estimate the capital expenditure for this compliance to be approximately $45 million. Failure to comply could result in penalties of up to $50,000 per day.
+
+ITEM 7. MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION
+
+Financial Highlights
+- Total Revenue for the fiscal year was $1.42 billion, an increase of 4% from the previous year.
+- Net Income decreased to $112 million, down from $135 million in the prior year, primarily due to the aforementioned supply chain cost increases.
+- R&D Expenses increased by 22% to $85 million as we accelerated the development of our next-generation battery technology.
+- Operating Cash Flow remained strong at $205 million, allowing us to maintain our quarterly dividend of $0.15 per share.
+
+Looking Forward (Q4 and Beyond)
+We anticipate continued headwinds in Q4 regarding supply chain logistics. However, our new automated manufacturing facility in Texas is scheduled to come online in February 2026, which we expect will reduce our domestic production costs by 11%. We have also hedged 40% of our anticipated lithium requirements for 2026 to mitigate further price volatility.
