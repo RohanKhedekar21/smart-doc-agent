@@ -24,16 +24,16 @@ export default function LoginScreen({ onGuestLogin }) {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-bg-color overflow-hidden">
+    <div className="fixed inset-0 bg-bg-color overflow-y-auto overflow-x-hidden flex flex-col">
       {/* Animated background orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 rounded-full blur-[120px] animate-pulse"></div>
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}} />
         <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}} />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center gap-10 max-w-md w-full px-6">
+      <div className="relative z-10 flex flex-col items-center gap-10 max-w-md w-full px-6 m-auto py-12">
         {/* Logo & Title */}
         <div className="flex flex-col items-center gap-4">
           <div className="w-20 h-20 rounded-2xl accent-gradient-bg flex items-center justify-center shadow-lg shadow-accent/30">

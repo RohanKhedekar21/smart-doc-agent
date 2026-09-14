@@ -453,30 +453,32 @@ function App() {
         {activeSession ? (
           <ChatArea messages={messages} onSendMessage={handleSendMessage} isLoading={isThinking} />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-bg-color to-bg-color/50">
-            <div className="w-24 h-24 bg-accent/10 rounded-[2rem] flex items-center justify-center mb-8 shadow-2xl shadow-accent/20 border border-accent/20">
-              <Bot size={48} className="text-accent drop-shadow-md" />
-            </div>
-            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-4">
-              Your AI Document Analyst
-            </h1>
-            <p className="text-gray-400 text-center max-w-md mb-10 leading-relaxed text-[15px]">
-              Securely upload PDFs, extract structured tables, and chat intelligently with your data using our advanced AI analysis engine.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <button 
-                onClick={handleCreateSession}
-                className="px-8 py-3.5 bg-accent hover:bg-accent-hover text-white font-medium rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] hover:-translate-y-0.5 flex items-center gap-2"
-              >
-                Start New Session
-              </button>
-              <button 
-                onClick={handleTrySampleDocument}
-                disabled={isUploading}
-                className="px-8 py-3.5 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl border border-panel-border hover:border-white/20 transition-all duration-300 flex items-center gap-2 disabled:opacity-50"
-              >
-                {isUploading ? "Loading Sample..." : "Try a Sample Document"}
-              </button>
+          <div className="flex-1 flex flex-col bg-gradient-to-b from-bg-color to-bg-color/50 overflow-y-auto overflow-x-hidden">
+            <div className="flex flex-col items-center m-auto p-8 py-12 max-w-2xl w-full">
+              <div className="w-24 h-24 bg-accent/10 rounded-[2rem] flex items-center justify-center mb-8 shadow-2xl shadow-accent/20 border border-accent/20 shrink-0">
+                <Bot size={48} className="text-accent drop-shadow-md" />
+              </div>
+              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-4 text-center">
+                Your AI Document Analyst
+              </h1>
+              <p className="text-gray-400 text-center max-w-md mb-10 leading-relaxed text-[15px]">
+                Securely upload PDFs, extract structured tables, and chat intelligently with your data using our advanced AI analysis engine.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center gap-4 justify-center w-full">
+                <button 
+                  onClick={handleCreateSession}
+                  className="px-8 py-3.5 bg-accent hover:bg-accent-hover text-white font-medium rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] hover:-translate-y-0.5 flex items-center gap-2"
+                >
+                  Start New Session
+                </button>
+                <button 
+                  onClick={handleTrySampleDocument}
+                  disabled={isUploading}
+                  className="px-8 py-3.5 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl border border-panel-border hover:border-white/20 transition-all duration-300 flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isUploading ? "Loading Sample..." : "Try a Sample Document"}
+                </button>
+              </div>
             </div>
           </div>
         )}
